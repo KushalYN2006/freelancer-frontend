@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Client Dashboard — FreelancerHub</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">FreelancerHub</div>
+        <div class="nav-links">
+            <span id="welcome-msg"></span>
+            <a href="#" onclick="logoutUser()" style="color:red">Logout</a>
+        </div>
+    </nav>
+
+    <div style="padding: 2rem;">
+        <h1>Client Dashboard</h1>
+        <p style="color: var(--muted)">Welcome back! Post a project or manage your bids.</p>
+
+        <!-- Create Project Form -->
+        <div style="background:white; padding:2rem; border-radius:12px;
+                    border:1px solid var(--border); max-width:600px; margin-top:2rem;">
+            <h2 style="margin-bottom:1.5rem">Post a New Project</h2>
+
+            <div id="form-error" class="error-msg" style="display:none"></div>
+            <div id="form-success" class="success-msg" style="display:none"></div>
+
+            <div class="form-group">
+                <label>Project Title</label>
+                <input type="text" id="proj-title" placeholder="e.g. Build a landing page">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="proj-desc" rows="4" placeholder="Describe what you need..."
+                          style="width:100%;padding:0.7rem 1rem;border:1px solid var(--border);
+                                 border-radius:8px;font-size:0.95rem;"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Budget (USD)</label>
+                <input type="number" id="proj-budget" placeholder="500">
+            </div>
+            <div class="form-group">
+                <label>Deadline</label>
+                <input type="date" id="proj-deadline">
+            </div>
+            <button class="btn-primary" onclick="submitProject()">Post Project</button>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        // Show welcome message from stored name
+        document.getElementById('welcome-msg').textContent =
+            'Hello, ' + localStorage.getItem('userName');
+
+        // Redirect if not logged in as client
+        if (!localStorage.getItem('token') || localStorage.getItem('role') !== 'client') {
+            window.location.href = 'login.html';
+        }
+
+        async function submitProject() {
+            const title    = document.getElementById('proj-title').value.trim();
+            const desc     = document.getElementById('proj-desc').value.trim();
+            const budget   = document.getElementById('proj-budget').value;
+            const deadline = document.getElementById('proj-deadline').value;
+            const errDiv   = document.getElementById('form-error');
+            const okDiv    = document.getElementById('form-success');
+
+            errDiv.style.display = 'none';
+            okDiv.style.display  = 'none';
+
+            if (!title || !desc || !budget || !deadline) {
+                errDiv.textContent = 'Please fill in all fields.';
+                errDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const result = await createProject(title, desc, budget, deadline);
+                if (result.error) {
+                    errDiv.textContent = result.error;
+                    errDiv.style.display = 'block';
+                } else {
+                    okDiv.textContent = 'Project posted successfully!';
+                    okDiv.style.display = 'block';
+                    // Clear the form
+                    document.getElementById('proj-title').value   = '';
+                    document.getElementById('proj-desc').value    = '';
+                    document.getElementById('proj-budget').value  = '';
+                    document.getElementById('proj-deadline').value = '';
+                }
+            } catch (e) {
+                errDiv.textContent = 'Error posting project. Is the Java server running?';
+                errDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

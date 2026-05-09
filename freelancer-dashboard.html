@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Freelancer Dashboard — FreelancerHub</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">FreelancerHub</div>
+        <div class="nav-links">
+            <span id="welcome-msg"></span>
+            <a href="#" onclick="logoutUser()" style="color:red">Logout</a>
+        </div>
+    </nav>
+
+    <div style="padding: 2rem;">
+        <h1>Freelancer Dashboard</h1>
+        <p style="color: var(--muted)">Browse open projects and place your bids.</p>
+
+        <div style="margin-top: 1.5rem; display:flex; gap:1rem;">
+            <input type="text" id="search-input" placeholder="Search projects..."
+                   style="flex:1;padding:0.7rem 1rem;border:1px solid var(--border);
+                          border-radius:8px;font-size:0.95rem;">
+            <button class="btn-primary" onclick="searchAndRender()">Search</button>
+            <button class="btn-primary" onclick="loadProjects()"
+                    style="background:white;color:var(--primary);border:1px solid var(--primary);">
+                Reset
+            </button>
+        </div>
+
+        <div id="projects-list" class="projects-grid" style="margin-top:1.5rem">
+            <p>Loading projects...</p>
+        </div>
+    </div>
+
+    <!-- Bid Modal -->
+    <div id="bid-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+                                background:rgba(0,0,0,0.5);z-index:999;
+                                align-items:center;justify-content:center;">
+        <div style="background:white;padding:2rem;border-radius:12px;width:90%;max-width:480px;">
+            <h3 id="modal-title" style="margin-bottom:1rem"></h3>
+            <div class="form-group">
+                <label>Your Bid Amount (USD)</label>
+                <input type="number" id="bid-amount" placeholder="e.g. 450">
+            </div>
+            <div class="form-group">
+                <label>Proposal</label>
+                <textarea id="bid-proposal" rows="4"
+                          style="width:100%;padding:0.7rem 1rem;border:1px solid var(--border);
+                                 border-radius:8px;font-size:0.95rem;"
+                          placeholder="Why are you the best person for this job?"></textarea>
+            </div>
+            <div style="display:flex;gap:1rem;margin-top:1rem">
+                <button class="btn-primary" onclick="submitBid()">Submit Bid</button>
+                <button onclick="closeBidModal()"
+                        style="padding:0.6rem 1.4rem;border:1px solid var(--border);
+                               border-radius:8px;background:white;cursor:pointer;">
+                    Cancel
+                </button>
+            </div>
+            <div id="bid-error" class="error-msg" style="display:none;margin-top:1rem"></div>
+            <div id="bid-success" class="success-msg" style="display:none;margin-top:1rem"></div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let currentProjectId = null;
+
+        document.getElementById('welcome-msg').textContent =
+            'Hello, ' + localStorage.getItem('userName');
+
+        if (!localStorage.getItem('token') || localStorage.getItem('role') !== 'freelancer') {
+            window.location.href = 'login.html';
+        }
+
+        async function loadProjects() {
+            const container = document.getElementById('projects-list');
+            container.innerHTML = '<p>Loading...</p>';
+            const projects = await fetchProjects();
+            renderProjects(projects, container);
+        }
+
+        async function searchAndRender() {
+            const keyword = document.getElementById('search-input').value.trim();
+            const container = document.getElementById('projects-list');
+            if (!keyword) { loadProjects(); return; }
+            container.innerHTML = '<p>Searching...</p>';
+            const projects = await searchProjects(keyword);
+            renderProjects(projects, container);
+        }
+
+        function renderProjects(projects, container) {
+            if (!projects.length) {
+                container.innerHTML = '<p>No open projects found.</p>';
+                return;
+            }
+            container.innerHTML = projects.map(p => `
+                <div class="project-card">
+                    <div class="project-badge">${p.status}</div>
+                    <h3>${p.title}</h3>
+                    <p>${p.description}</p>
+                    <div class="project-meta">
+                        <span>💰 $${p.budget}</span>
+                        <span>📅 ${p.deadline}</span>
+                    </div>
+                    <button onclick="openBidModal(${p.projectId}, '${p.title}')"
+                            class="btn-primary">Place Bid</button>
+                </div>
+            `).join('');
+        }
+
+        function openBidModal(projectId, title) {
+            currentProjectId = projectId;
+            document.getElementById('modal-title').textContent = 'Bid on: ' + title;
+            document.getElementById('bid-modal').style.display = 'flex';
+            document.getElementById('bid-error').style.display   = 'none';
+            document.getElementById('bid-success').style.display = 'none';
+        }
+
+        function closeBidModal() {
+            document.getElementById('bid-modal').style.display = 'none';
+            currentProjectId = null;
+        }
+
+        async function submitBid() {
+            const amount   = document.getElementById('bid-amount').value;
+            const proposal = document.getElementById('bid-proposal').value.trim();
+            const errDiv   = document.getElementById('bid-error');
+            const okDiv    = document.getElementById('bid-success');
+
+            if (!amount || !proposal) {
+                errDiv.textContent = 'Please fill in both fields.';
+                errDiv.style.display = 'block';
+                return;
+            }
+            try {
+                const result = await placeBid(currentProjectId, amount, proposal);
+                if (result.error) {
+                    errDiv.textContent = result.error;
+                    errDiv.style.display = 'block';
+                } else {
+                    okDiv.textContent = 'Bid submitted successfully!';
+                    okDiv.style.display = 'block';
+                    setTimeout(closeBidModal, 1500);
+                }
+            } catch (e) {
+                errDiv.textContent = 'Error submitting bid.';
+                errDiv.style.display = 'block';
+            }
+        }
+
+        loadProjects();
+    </script>
+</body>
+</html>

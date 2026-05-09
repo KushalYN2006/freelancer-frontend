@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreelancerHub</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">FreelancerHub</div>
+        <div class="nav-links">
+            <a href="login.html">Login</a>
+            <a href="register.html" class="btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <main class="hero">
+        <h1>Find Top Freelancers <span>Instantly</span></h1>
+        <p>Connect clients with skilled freelancers worldwide.</p>
+        <a href="register.html" class="btn-primary">Start for Free</a>
+    </main>
+
+    <!-- Project listings loaded from Java API -->
+    <section class="projects-section">
+        <h2>Open Projects</h2>
+        <div id="projects-list" class="projects-grid">
+            <p>Loading projects...</p>
+        </div>
+    </section>
+
+    <script src="js/api.js"></script>
+    <script src="js/index.js"></script>
+</body>
+</html>

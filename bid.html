@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Place a Bid — FreelancerHub</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">FreelancerHub</div>
+        <div class="nav-links">
+            <span id="welcome-msg"></span>
+            <a href="freelancer-dashboard.html">Back to Projects</a>
+            <a href="#" onclick="logoutUser()" style="color:red">Logout</a>
+        </div>
+    </nav>
+
+    <div style="padding: 2rem; max-width: 900px; margin: 0 auto;">
+        <h1>Place Your Bid</h1>
+        
+        <!-- Project Details Section -->
+        <div id="project-details" 
+             style="background:white; padding:2rem; border-radius:12px; border:1px solid var(--border); margin-top:2rem; margin-bottom:2rem;">
+            <div id="project-loading" style="text-align:center;">
+                <p>Loading project details...</p>
+            </div>
+        </div>
+
+        <!-- Bid Form Section -->
+        <div style="background:white; padding:2rem; border-radius:12px; border:1px solid var(--border); max-width:600px;">
+            <h2 style="margin-bottom:1.5rem">Submit Your Bid</h2>
+
+            <div id="form-error" class="error-msg" style="display:none"></div>
+            <div id="form-success" class="success-msg" style="display:none"></div>
+
+            <div class="form-group">
+                <label>Your Bid Amount (USD)</label>
+                <input type="number" id="bid-amount" placeholder="e.g. 450" min="1">
+            </div>
+            <div class="form-group">
+                <label>Your Proposal</label>
+                <textarea id="bid-proposal" rows="5" 
+                          style="width:100%;padding:0.7rem 1rem;border:1px solid var(--border);
+                                 border-radius:8px;font-size:0.95rem;"
+                          placeholder="Why are you the best person for this job? What's your experience?"></textarea>
+            </div>
+            <button class="btn-primary" onclick="submitBid()" style="width:100%;padding:0.8rem;">Submit Bid</button>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let projectId = null;
+        let projectData = null;
+
+        // Check authentication
+        if (!localStorage.getItem('token') || localStorage.getItem('role') !== 'freelancer') {
+            window.location.href = 'login.html';
+        }
+
+        // Show welcome message
+        document.getElementById('welcome-msg').textContent =
+            'Hello, ' + localStorage.getItem('userName');
+
+        // Get project ID from URL query parameter
+        function getProjectIdFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        // Load project details on page load
+        async function loadProjectDetails() {
+            projectId = getProjectIdFromURL();
+            
+            if (!projectId) {
+                document.getElementById('project-details').innerHTML = 
+                    '<p style="color:red">Error: Project ID not found. Please select a project from the dashboard.</p>';
+                return;
+            }
+
+            try {
+                const projects = await fetchProjects();
+                projectData = projects.find(p => p.projectId == projectId);
+
+                if (!projectData) {
+                    document.getElementById('project-details').innerHTML = 
+                        '<p style="color:red">Project not found.</p>';
+                    return;
+                }
+
+                // Display project details
+                document.getElementById('project-details').innerHTML = `
+                    <div style="border-left:4px solid var(--primary); padding-left:1.5rem;">
+                        <h3 style="font-size:1.4rem; margin-bottom:0.5rem;">${projectData.title}</h3>
+                        <p style="color:var(--muted); font-size:0.95rem; margin-bottom:1rem;">${projectData.description}</p>
+                        <div style="display:flex; gap:2rem; margin-top:1rem;">
+                            <div>
+                                <span style="color:var(--muted); font-size:0.85rem;">Budget</span>
+                                <p style="font-size:1.2rem; font-weight:700; color:var(--primary);">$${projectData.budget}</p>
+                            </div>
+                            <div>
+                                <span style="color:var(--muted); font-size:0.85rem;">Deadline</span>
+                                <p style="font-size:1.2rem; font-weight:700;">${projectData.deadline}</p>
+                            </div>
+                            <div>
+                                <span style="color:var(--muted); font-size:0.85rem;">Status</span>
+                                <p style="font-size:1.2rem; font-weight:700; color:var(--success);">${projectData.status || 'Open'}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                console.error('Failed to load project:', err);
+                document.getElementById('project-details').innerHTML = 
+                    '<p style="color:red">Error loading project. Is the Java server running?</p>';
+            }
+        }
+
+        // Submit bid
+        async function submitBid() {
+            const amount   = document.getElementById('bid-amount').value.trim();
+            const proposal = document.getElementById('bid-proposal').value.trim();
+            const errDiv   = document.getElementById('form-error');
+            const okDiv    = document.getElementById('form-success');
+
+            errDiv.style.display = 'none';
+            okDiv.style.display  = 'none';
+
+            if (!amount || !proposal) {
+                errDiv.textContent = 'Please fill in both fields.';
+                errDiv.style.display = 'block';
+                return;
+            }
+
+            if (parseFloat(amount) <= 0) {
+                errDiv.textContent = 'Bid amount must be greater than 0.';
+                errDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const result = await placeBid(projectId, amount, proposal);
+                
+                if (result.error) {
+                    errDiv.textContent = result.error;
+                    errDiv.style.display = 'block';
+                } else {
+                    okDiv.textContent = 'Bid submitted successfully! Redirecting...';
+                    okDiv.style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = 'freelancer-dashboard.html';
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                errDiv.textContent = 'Error submitting bid. Is the Java server running?';
+                errDiv.style.display = 'block';
+            }
+        }
+
+        // Load project when page loads
+        loadProjectDetails();
+    </script>
+</body>
+</html>
