@@ -1,6 +1,6 @@
 // ── This file is the bridge between your HTML and Java backend ──
 
-const API_BASE = 'https://freelancerhub-api.herokuapp.com/api';  // ← your Java server
+const API_BASE = 'https://web-production-bc088.up.railway.app/api';  // ← your Java server
 
 // Helper: get JWT token from storage
 function getToken() {
