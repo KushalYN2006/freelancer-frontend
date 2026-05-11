@@ -12,6 +12,7 @@ function getToken()   { return localStorage.getItem('token'); }
 function getUserId()  { return localStorage.getItem('userId'); }
 function getRole()    { return localStorage.getItem('role'); }
 function getUserName(){ return localStorage.getItem('userName'); }
+function getName()    { return getUserName(); }
 function isLoggedIn() { return !!getToken(); }
 
 function headers(requiresAuth = false) {
@@ -58,13 +59,22 @@ async function loginUser(email, password) {
 // ── PROJECTS ─────────────────────────────────────────────────
 
 async function fetchProjects() {
-    const res = await fetch(`${API_BASE}/projects`, { headers: headers() });
+    const res = await fetch(`${API_BASE}/projects`);
     return res.json();
 }
 
 async function searchProjects(keyword) {
-    const res = await fetch(`${API_BASE}/projects/search?keyword=${encodeURIComponent(keyword)}`, { headers: headers() });
-    return res.json();
+    const url = `${API_BASE}/projects/search?keyword=${encodeURIComponent(keyword)}`;
+    const res = await fetch(url);
+    if (res.ok) return res.json();
+
+    const allProjects = await fetchProjects();
+    const q = (keyword || '').toLowerCase();
+    return allProjects.filter(p =>
+        (p.title || '').toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q) ||
+        (p.client?.name || '').toLowerCase().includes(q)
+    );
 }
 
 async function getClientProjects(clientId) {
@@ -120,6 +130,10 @@ async function getReviews(userId) {
     return res.json();
 }
 
+async function getReviewsForUser(userId) {
+    return getReviews(userId);
+}
+
 async function postReview(projectId, revieweeId, rating, comment) {
     const res = await fetch(`${API_BASE}/reviews`, {
         method: 'POST', headers: headers(true),
@@ -145,6 +159,18 @@ async function sendMessage(receiverId, message) {
         method: 'POST', headers: headers(true),
         body: JSON.stringify({ senderId: parseInt(getUserId()), receiverId: parseInt(receiverId), message })
     });
+    return res.json();
+}
+
+// ── CONTRACTS ───────────────────────────────────────────────────────────────
+
+async function getFreelancerContracts(freelancerId) {
+    const res = await fetch(`${API_BASE}/contracts/freelancer/${freelancerId}`, { headers: headers(true) });
+    return res.json();
+}
+
+async function getClientContracts(clientId) {
+    const res = await fetch(`${API_BASE}/contracts/client/${clientId}`, { headers: headers(true) });
     return res.json();
 }
 

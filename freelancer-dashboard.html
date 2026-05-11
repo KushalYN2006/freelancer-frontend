@@ -101,7 +101,7 @@ body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;}
 <script src="js/api.js"></script>
 <script>
 requireAuth('freelancer');
-document.getElementById('uname').textContent = getName();
+document.getElementById('uname').textContent = getUserName() || 'Freelancer';
 let currentProjectId = null;
 
 async function loadStats() {
@@ -175,7 +175,7 @@ async function submitBid() {
   const amount=document.getElementById('ba').value, proposal=document.getElementById('bp').value.trim();
   const err=document.getElementById('bid-err'); err.style.display='none';
   if (!amount||!proposal) { err.textContent='Both fields are required.'; err.style.display='block'; return; }
-  const r = await placeBid(currentProjectId, getUserId(), parseFloat(amount), proposal);
+  const r = await placeBid(currentProjectId, parseFloat(amount), proposal);
   if (r.error) { err.textContent=r.error; err.style.display='block'; return; }
   showToast('Bid submitted successfully!','success');
   document.getElementById('bid-modal').classList.remove('open');
