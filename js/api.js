@@ -130,8 +130,23 @@ async function getReviews(userId) {
     return res.json();
 }
 
+async function getAllReviews() {
+    const res = await fetch(`${API_BASE}/reviews/all`);
+    return res.json();
+}
+
 async function getReviewsForUser(userId) {
     return getReviews(userId);
+}
+
+async function getReviewsGiven(userId) {
+    const res = await fetch(`${API_BASE}/reviews/given/${userId}`, { headers: headers(true) });
+    return res.json();
+}
+
+async function getAverageRating(userId) {
+    const res = await fetch(`${API_BASE}/reviews/rating/${userId}`, { headers: headers(true) });
+    return res.json();
 }
 
 async function postReview(projectId, revieweeId, rating, comment) {
