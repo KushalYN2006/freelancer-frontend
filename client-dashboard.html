@@ -1,100 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Client Dashboard — FreelancerHub</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Client Dashboard — FreelancerHub</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;}
+.sidebar{width:230px;background:#1E1B4B;min-height:100vh;padding:1.5rem 1rem;display:flex;flex-direction:column;gap:.2rem;flex-shrink:0;position:sticky;top:0;height:100vh;}
+.sidebar-logo{font-weight:800;font-size:1.15rem;color:#fff;padding:.75rem 1rem;margin-bottom:1rem;}
+.nav-item{display:flex;align-items:center;gap:.75rem;padding:.65rem 1rem;border-radius:8px;color:rgba(255,255,255,.65);font-size:.875rem;font-weight:500;cursor:pointer;transition:all .2s;text-decoration:none;}
+.nav-item:hover,.nav-item.active{background:rgba(255,255,255,.12);color:#fff;}
+.nav-divider{height:1px;background:rgba(255,255,255,.1);margin:.75rem 0;}
+.nav-logout{margin-top:auto;color:#F87171 !important;}
+.nav-logout:hover{background:rgba(239,68,68,.15) !important;}
+.main{flex:1;padding:2rem;overflow-y:auto;}
+.page-header{margin-bottom:2rem;}
+.page-header h1{font-size:1.6rem;font-weight:700;color:#0F172A;margin:0;}
+.page-header p{color:#64748B;margin:.3rem 0 0;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:2rem;}
+.stat-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:1.25rem;transition:box-shadow .2s;}
+.stat-card:hover{box-shadow:0 4px 16px rgba(79,70,229,.1);}
+.stat-icon{font-size:1.6rem;margin-bottom:.5rem;}
+.stat-value{font-size:2rem;font-weight:800;color:#0F172A;line-height:1;}
+.stat-label{font-size:.78rem;color:#64748B;font-weight:500;margin-top:.25rem;}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.section-title{font-size:1rem;font-weight:700;color:#0F172A;}
+.card-row{background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.75rem;transition:box-shadow .2s;}
+.card-row:hover{box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.row-title{font-weight:600;color:#0F172A;font-size:.9rem;}
+.row-meta{font-size:.78rem;color:#64748B;margin-top:.2rem;}
+.row-actions{display:flex;gap:.5rem;flex-shrink:0;align-items:center;}
+.empty{text-align:center;padding:2.5rem;color:#94A3B8;}
+.empty-icon{font-size:2.2rem;margin-bottom:.5rem;}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:16px;padding:2rem;width:90%;max-width:500px;}
+.modal h3{font-size:1.15rem;font-weight:700;margin-bottom:1.25rem;}
+.fg{margin-bottom:1rem;}
+.fg label{display:block;font-size:.83rem;font-weight:600;margin-bottom:.3rem;}
+.fg input,.fg textarea{width:100%;padding:.65rem .9rem;border:2px solid #E2E8F0;border-radius:8px;font-size:.9rem;outline:none;font-family:inherit;transition:border-color .2s;box-sizing:border-box;}
+.fg input:focus,.fg textarea:focus{border-color:#4F46E5;}
+.modal-actions{display:flex;gap:.75rem;margin-top:1.25rem;}
+@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+</style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo">FreelancerHub</div>
-        <div class="nav-links">
-            <span id="welcome-msg"></span>
-            <a href="#" onclick="logoutUser()" style="color:red">Logout</a>
-        </div>
-    </nav>
-
-    <div style="padding: 2rem;">
-        <h1>Client Dashboard</h1>
-        <p style="color: var(--muted)">Welcome back! Post a project or manage your bids.</p>
-
-        <!-- Create Project Form -->
-        <div style="background:white; padding:2rem; border-radius:12px;
-                    border:1px solid var(--border); max-width:600px; margin-top:2rem;">
-            <h2 style="margin-bottom:1.5rem">Post a New Project</h2>
-
-            <div id="form-error" class="error-msg" style="display:none"></div>
-            <div id="form-success" class="success-msg" style="display:none"></div>
-
-            <div class="form-group">
-                <label>Project Title</label>
-                <input type="text" id="proj-title" placeholder="e.g. Build a landing page">
-            </div>
-            <div class="form-group">
-                <label>Description</label>
-                <textarea id="proj-desc" rows="4" placeholder="Describe what you need..."
-                          style="width:100%;padding:0.7rem 1rem;border:1px solid var(--border);
-                                 border-radius:8px;font-size:0.95rem;"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Budget (USD)</label>
-                <input type="number" id="proj-budget" placeholder="500">
-            </div>
-            <div class="form-group">
-                <label>Deadline</label>
-                <input type="date" id="proj-deadline">
-            </div>
-            <button class="btn-primary" onclick="submitProject()">Post Project</button>
-        </div>
+<aside class="sidebar">
+  <div class="sidebar-logo">🚀 FreelancerHub</div>
+  <a class="nav-item active" href="client-dashboard.html">📊 Dashboard</a>
+  <a class="nav-item" href="my-projects.html">📁 My Projects</a>
+  <a class="nav-item" href="messages.html">💬 Messages</a>
+  <a class="nav-item" href="contracts.html">📄 Contracts</a>
+  <a class="nav-item" href="reviews.html">⭐ Reviews</a>
+  <div class="nav-divider"></div>
+  <a class="nav-item nav-logout" href="#" onclick="logoutUser()">🚪 Logout</a>
+</aside>
+<main class="main">
+  <div class="page-header">
+    <h1>Welcome back, <span id="uname"></span> 👋</h1>
+    <p>Manage your projects and track your activity.</p>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon">📁</div><div class="stat-value" id="s1">—</div><div class="stat-label">Total Projects</div></div>
+    <div class="stat-card"><div class="stat-icon">🟢</div><div class="stat-value" id="s2">—</div><div class="stat-label">Open Projects</div></div>
+    <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value" id="s3">—</div><div class="stat-label">Active Contracts</div></div>
+    <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-value" id="s4">—</div><div class="stat-label">Bids Received</div></div>
+  </div>
+  <div class="section-header">
+    <div class="section-title">My Recent Projects</div>
+    <button class="btn btn-primary btn-sm" onclick="document.getElementById('pm').classList.add('open')">+ New Project</button>
+  </div>
+  <div id="proj-list"><div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div></div>
+  <div style="margin-top:2rem">
+    <div class="section-title" style="margin-bottom:1rem">Recent Bids on Your Projects</div>
+    <div id="bids-list"><div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div></div>
+  </div>
+</main>
+<div class="modal-bg" id="pm">
+  <div class="modal">
+    <h3>📁 Post a New Project</h3>
+    <div id="merr" style="display:none;background:#FEF2F2;color:#B91C1C;padding:.7rem;border-radius:8px;margin-bottom:1rem;font-size:.88rem;"></div>
+    <div class="fg"><label>Title *</label><input id="pt" placeholder="e.g. Build a landing page"></div>
+    <div class="fg"><label>Description *</label><textarea id="pd" rows="3" placeholder="Describe your project..."></textarea></div>
+    <div class="fg"><label>Budget (USD) *</label><input id="pb" type="number" placeholder="500"></div>
+    <div class="fg"><label>Deadline *</label><input id="pdl" type="date"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="submitProject()">Post Project</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('pm').classList.remove('open')">Cancel</button>
     </div>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+requireAuth('client');
+document.getElementById('uname').textContent = getName();
+let myProjects = [];
 
-    <script src="js/api.js"></script>
-    <script>
-        // Show welcome message from stored name
-        document.getElementById('welcome-msg').textContent =
-            'Hello, ' + localStorage.getItem('userName');
+async function load() {
+  const uid = getUserId();
+  const [projs, conts] = await Promise.all([fetchClientProjects(uid).catch(()=>[]), getClientContracts(uid).catch(()=>[])]);
+  myProjects = Array.isArray(projs) ? projs : [];
+  const contracts = Array.isArray(conts) ? conts : [];
+  let totalBids = 0;
+  const bidsPerProject = {};
+  for (const p of myProjects.slice(0,5)) {
+    const b = await getProjectBids(p.projectId).catch(()=>[]);
+    const bl = Array.isArray(b) ? b : [];
+    bidsPerProject[p.projectId] = bl;
+    totalBids += bl.length;
+  }
+  document.getElementById('s1').textContent = myProjects.length;
+  document.getElementById('s2').textContent = myProjects.filter(p=>p.status==='open').length;
+  document.getElementById('s3').textContent = contracts.filter(c=>c.status==='active').length;
+  document.getElementById('s4').textContent = totalBids;
 
-        // Redirect if not logged in as client
-        if (!localStorage.getItem('token') || localStorage.getItem('role') !== 'client') {
-            window.location.href = 'login.html';
-        }
+  const pl = document.getElementById('proj-list');
+  if (!myProjects.length) { pl.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><p>No projects yet. Post your first one!</p></div>`; }
+  else { pl.innerHTML = myProjects.slice(0,5).map(p=>`<div class="card-row"><div><div class="row-title">${p.title}</div><div class="row-meta">💰 $${p.budget} &nbsp;|&nbsp; 📅 ${formatDate(p.deadline)}</div></div><div class="row-actions">${statusBadge(p.status)}<a href="my-projects.html" class="btn btn-outline btn-sm">Manage</a></div></div>`).join('') + (myProjects.length>5?`<a href="my-projects.html" style="display:block;text-align:center;color:#4F46E5;font-weight:600;margin-top:.75rem;font-size:.88rem">View all ${myProjects.length} →</a>`:``); }
 
-        async function submitProject() {
-            const title    = document.getElementById('proj-title').value.trim();
-            const desc     = document.getElementById('proj-desc').value.trim();
-            const budget   = document.getElementById('proj-budget').value;
-            const deadline = document.getElementById('proj-deadline').value;
-            const errDiv   = document.getElementById('form-error');
-            const okDiv    = document.getElementById('form-success');
+  const bl = document.getElementById('bids-list');
+  let allBids = [];
+  for (const [pid, bids] of Object.entries(bidsPerProject)) {
+    const proj = myProjects.find(p=>p.projectId==pid);
+    allBids.push(...bids.map(b=>({...b,projTitle:proj?.title||''})));
+  }
+  if (!allBids.length) { bl.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><p>No bids yet.</p></div>`; return; }
+  bl.innerHTML = allBids.slice(0,5).map(b=>`
+    <div class="card-row">
+      <div style="flex:1">
+        <div class="row-title">${b.freelancer?.name||'Freelancer'} &nbsp;→&nbsp; <em>${b.projTitle}</em></div>
+        <div class="row-meta">💰 $${b.bidAmount} &nbsp;|&nbsp; "${(b.proposal||'').substring(0,70)}..."</div>
+      </div>
+      <div class="row-actions">
+        ${statusBadge(b.status)}
+        ${b.status==='pending'?`<button class="btn btn-success btn-sm" onclick="acceptBid(${b.bidId},${b.project?.projectId},${b.freelancer?.userId})">Accept</button><button class="btn btn-danger btn-sm" onclick="rejectBid(${b.bidId})">Reject</button>`:''}
+      </div>
+    </div>`).join('');
+}
 
-            errDiv.style.display = 'none';
-            okDiv.style.display  = 'none';
+async function acceptBid(bidId, projectId, freelancerId) {
+  const r = await updateBidStatus(bidId,'accepted');
+  if (r.error) { showToast(r.error,'error'); return; }
+  const today = new Date().toISOString().split('T')[0];
+  const end   = new Date(Date.now()+30*24*60*60*1000).toISOString().split('T')[0];
+  await createContract(projectId, freelancerId, today, end);
+  showToast('Bid accepted & contract created!','success'); load();
+}
+async function rejectBid(bidId) {
+  const r = await updateBidStatus(bidId,'rejected');
+  if (r.error) { showToast(r.error,'error'); return; }
+  showToast('Bid rejected','info'); load();
+}
 
-            if (!title || !desc || !budget || !deadline) {
-                errDiv.textContent = 'Please fill in all fields.';
-                errDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                const result = await createProject(title, desc, budget, deadline);
-                if (result.error) {
-                    errDiv.textContent = result.error;
-                    errDiv.style.display = 'block';
-                } else {
-                    okDiv.textContent = 'Project posted successfully!';
-                    okDiv.style.display = 'block';
-                    // Clear the form
-                    document.getElementById('proj-title').value   = '';
-                    document.getElementById('proj-desc').value    = '';
-                    document.getElementById('proj-budget').value  = '';
-                    document.getElementById('proj-deadline').value = '';
-                }
-            } catch (e) {
-                errDiv.textContent = 'Error posting project. Is the Java server running?';
-                errDiv.style.display = 'block';
-            }
-        }
-    </script>
-</body>
-</html>
+async function submitProject() {
+  const title=document.getElementById('pt').value.trim(), desc=document.getElementById('pd').value.trim();
+  const budget=document.getElementById('pb').value, deadline=document.getElementById('pdl').value;
+  const err=document.getElementById('merr'); err.style.display='none';
+  if (!title||!desc||!budget||!deadline) { err.textContent='All fields required.'; err.style.display='block'; return; }
+  const r = await createProject(getUserId(),title,desc,parseFloat(budget),deadline);
+  if (r.error) { err.textContent=r.error; err.style.display='block'; return; }
+  showToast('Project posted!','success');
+  document.getElementById('pm').classList.remove('open');
+  ['pt','pd','pb','pdl'].forEach(id=>document.getElementById(id).value='');
+  load();
+}
+load();
+</script>
+</body></html>

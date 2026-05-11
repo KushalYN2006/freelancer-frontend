@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>My Projects — FreelancerHub</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;}
+.sidebar{width:230px;background:#1E1B4B;min-height:100vh;padding:1.5rem 1rem;display:flex;flex-direction:column;gap:.2rem;flex-shrink:0;position:sticky;top:0;height:100vh;}
+.sidebar-logo{font-weight:800;font-size:1.15rem;color:#fff;padding:.75rem 1rem;margin-bottom:1rem;}
+.nav-item{display:flex;align-items:center;gap:.75rem;padding:.65rem 1rem;border-radius:8px;color:rgba(255,255,255,.65);font-size:.875rem;font-weight:500;text-decoration:none;transition:all .2s;}
+.nav-item:hover,.nav-item.active{background:rgba(255,255,255,.12);color:#fff;}
+.nav-divider{height:1px;background:rgba(255,255,255,.1);margin:.75rem 0;}
+.nav-logout{margin-top:auto;color:#F87171!important;}
+.main{flex:1;padding:2rem;overflow-y:auto;}
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;}
+.page-header h1{font-size:1.5rem;font-weight:700;color:#0F172A;margin:0;}
+.proj-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;margin-bottom:1rem;overflow:hidden;}
+.proj-header{padding:1.25rem;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;}
+.proj-title{font-weight:700;font-size:1rem;color:#0F172A;margin-bottom:.25rem;}
+.proj-meta{font-size:.8rem;color:#64748B;}
+.proj-body{padding:1.25rem;}
+.proj-desc{font-size:.88rem;color:#64748B;margin-bottom:1rem;line-height:1.6;}
+.bids-section h4{font-size:.875rem;font-weight:700;color:#0F172A;margin-bottom:.75rem;}
+.bid-row{border:1px solid #E2E8F0;border-radius:8px;padding:.85rem 1rem;margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;}
+.bid-name{font-weight:600;font-size:.88rem;color:#0F172A;}
+.bid-proposal{font-size:.8rem;color:#64748B;margin-top:.15rem;}
+.bid-amount{font-weight:700;color:#4F46E5;font-size:.95rem;white-space:nowrap;}
+.empty{text-align:center;padding:2.5rem;color:#94A3B8;}
+.empty-icon{font-size:2.2rem;margin-bottom:.5rem;}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:16px;padding:2rem;width:90%;max-width:500px;}
+.modal h3{font-size:1.1rem;font-weight:700;margin-bottom:1.25rem;}
+.fg{margin-bottom:1rem;}
+.fg label{display:block;font-size:.83rem;font-weight:600;margin-bottom:.3rem;}
+.fg input,.fg textarea{width:100%;padding:.65rem .9rem;border:2px solid #E2E8F0;border-radius:8px;font-size:.9rem;outline:none;font-family:inherit;box-sizing:border-box;}
+.fg input:focus,.fg textarea:focus{border-color:#4F46E5;}
+@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">🚀 FreelancerHub</div>
+  <a class="nav-item" href="client-dashboard.html">📊 Dashboard</a>
+  <a class="nav-item active" href="my-projects.html">📁 My Projects</a>
+  <a class="nav-item" href="messages.html">💬 Messages</a>
+  <a class="nav-item" href="contracts.html">📄 Contracts</a>
+  <a class="nav-item" href="reviews.html">⭐ Reviews</a>
+  <div class="nav-divider"></div>
+  <a class="nav-item nav-logout" href="#" onclick="logoutUser()">🚪 Logout</a>
+</aside>
+<main class="main">
+  <div class="page-header">
+    <h1>📁 My Projects</h1>
+    <button class="btn btn-primary" onclick="document.getElementById('pm').classList.add('open')">+ Post New Project</button>
+  </div>
+  <div id="filter-row" style="display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+    <button class="btn btn-outline btn-sm active-filter" onclick="filterProjects('all',this)">All</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterProjects('open',this)">Open</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterProjects('in_progress',this)">In Progress</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterProjects('completed',this)">Completed</button>
+  </div>
+  <div id="projects-list"><div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div></div>
+</main>
+
+<div class="modal-bg" id="pm">
+  <div class="modal">
+    <h3>📁 Post a New Project</h3>
+    <div id="merr" style="display:none;background:#FEF2F2;color:#B91C1C;padding:.7rem;border-radius:8px;margin-bottom:1rem;font-size:.88rem;"></div>
+    <div class="fg"><label>Title *</label><input id="pt" placeholder="e.g. Build a landing page"></div>
+    <div class="fg"><label>Description *</label><textarea id="pd" rows="3" placeholder="Describe your project..."></textarea></div>
+    <div class="fg"><label>Budget (USD) *</label><input id="pb" type="number" placeholder="500"></div>
+    <div class="fg"><label>Deadline *</label><input id="pdl" type="date"></div>
+    <div style="display:flex;gap:.75rem;margin-top:1rem;">
+      <button class="btn btn-primary" onclick="submitProject()">Post Project</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('pm').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="review-modal">
+  <div class="modal">
+    <h3>⭐ Leave a Review</h3>
+    <div id="rev-err" style="display:none;background:#FEF2F2;color:#B91C1C;padding:.7rem;border-radius:8px;margin-bottom:1rem;font-size:.88rem;"></div>
+    <p style="color:#64748B;font-size:.88rem;margin-bottom:1rem;" id="rev-context"></p>
+    <div class="fg">
+      <label>Rating *</label>
+      <div id="star-picker" style="display:flex;gap:.3rem;font-size:1.8rem;cursor:pointer;">
+        <span onclick="setRating(1)" class="star">☆</span><span onclick="setRating(2)" class="star">☆</span>
+        <span onclick="setRating(3)" class="star">☆</span><span onclick="setRating(4)" class="star">☆</span>
+        <span onclick="setRating(5)" class="star">☆</span>
+      </div>
+    </div>
+    <div class="fg"><label>Comment</label><textarea id="rev-comment" rows="3" placeholder="Share your experience..."></textarea></div>
+    <div style="display:flex;gap:.75rem;margin-top:1rem;">
+      <button class="btn btn-primary" onclick="submitReview()">Submit Review</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('review-modal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+requireAuth('client');
+let allProjects=[], currentRating=0, currentReviewData={};
+
+async function load() {
+  const projs = await fetchClientProjects(getUserId()).catch(()=>[]);
+  allProjects = Array.isArray(projs)?projs:[];
+  renderProjects(allProjects);
+}
+
+function filterProjects(status, btn) {
+  document.querySelectorAll('#filter-row button').forEach(b=>b.className='btn btn-ghost btn-sm');
+  if(btn) btn.className='btn btn-outline btn-sm';
+  const filtered = status==='all' ? allProjects : allProjects.filter(p=>p.status===status);
+  renderProjects(filtered);
+}
+
+async function renderProjects(projects) {
+  const pl = document.getElementById('projects-list');
+  if (!projects.length) { pl.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><p>No projects found.</p><button class="btn btn-primary" onclick="document.getElementById('pm').classList.add('open')">Post your first project</button></div>`; return; }
+  let html = '';
+  for (const p of projects) {
+    const bids = await getProjectBids(p.projectId).catch(()=>[]);
+    const bidList = Array.isArray(bids)?bids:[];
+    const acceptedBid = bidList.find(b=>b.status==='accepted');
+    html += `
+      <div class="proj-card">
+        <div class="proj-header">
+          <div>
+            <div class="proj-title">${p.title}</div>
+            <div class="proj-meta">💰 $${p.budget} &nbsp;|&nbsp; 📅 ${formatDate(p.deadline)} &nbsp;|&nbsp; ${bidList.length} bid(s)</div>
+          </div>
+          <div style="display:flex;gap:.5rem;align-items:center;flex-shrink:0;">
+            ${statusBadge(p.status)}
+            ${p.status==='open'?`<button class="btn btn-danger btn-sm" onclick="delProject(${p.projectId})">Delete</button>`:''}
+          </div>
+        </div>
+        <div class="proj-body">
+          <div class="proj-desc">${p.description||''}</div>
+          <div class="bids-section">
+            <h4>Bids (${bidList.length})</h4>
+            ${bidList.length===0?`<p style="color:#94A3B8;font-size:.85rem">No bids yet.</p>`:
+              bidList.map(b=>`
+                <div class="bid-row">
+                  <div style="flex:1">
+                    <div class="bid-name">👤 ${b.freelancer?.name||'Freelancer'}</div>
+                    <div class="bid-proposal">${(b.proposal||'').substring(0,100)}...</div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.4rem">
+                    <div class="bid-amount">$${b.bidAmount}</div>
+                    ${statusBadge(b.status)}
+                    ${b.status==='pending'?`
+                      <div style="display:flex;gap:.35rem">
+                        <button class="btn btn-success btn-sm" onclick="acceptBid(${b.bidId},${p.projectId},${b.freelancer?.userId})">Accept</button>
+                        <button class="btn btn-danger btn-sm" onclick="rejectBid(${b.bidId})">Reject</button>
+                      </div>`:''}
+                    ${b.status==='accepted'?`<button class="btn btn-outline btn-sm" onclick="msgFreelancer(${b.freelancer?.userId})">💬 Message</button>`:''}
+                  </div>
+                </div>`).join('')}
+            ${p.status==='completed'&&acceptedBid?`<button class="btn btn-primary btn-sm" style="margin-top:.5rem" onclick="openReview(${p.projectId},${acceptedBid.freelancer?.userId},'${(acceptedBid.freelancer?.name||'').replace(/'/g,"\\'")}')">⭐ Leave Review</button>`:''}
+          </div>
+        </div>
+      </div>`;
+  }
+  pl.innerHTML = html;
+}
+
+async function acceptBid(bidId, projectId, freelancerId) {
+  const r = await updateBidStatus(bidId,'accepted');
+  if (r.error) { showToast(r.error,'error'); return; }
+  const today=new Date().toISOString().split('T')[0], end=new Date(Date.now()+30*24*60*60*1000).toISOString().split('T')[0];
+  await createContract(projectId, freelancerId, today, end);
+  showToast('Bid accepted & contract created!','success'); load();
+}
+async function rejectBid(bidId) { const r=await updateBidStatus(bidId,'rejected'); if(r.error){showToast(r.error,'error');return;} showToast('Bid rejected','info'); load(); }
+async function delProject(id) { if(!confirm('Delete this project?')) return; const r=await deleteProject(id); if(r.error){showToast(r.error,'error');return;} showToast('Project deleted','success'); load(); }
+function msgFreelancer(uid) { window.location.href=`messages.html?to=${uid}`; }
+
+function openReview(projectId, revieweeId, name) {
+  currentReviewData={projectId, revieweeId}; currentRating=0;
+  document.getElementById('rev-context').textContent=`Review for ${name}`;
+  document.getElementById('rev-comment').value='';
+  document.getElementById('rev-err').style.display='none';
+  document.querySelectorAll('.star').forEach(s=>s.textContent='☆');
+  document.getElementById('review-modal').classList.add('open');
+}
+function setRating(n) {
+  currentRating=n;
+  document.querySelectorAll('.star').forEach((s,i)=>s.textContent=i<n?'★':'☆');
+}
+async function submitReview() {
+  const comment=document.getElementById('rev-comment').value.trim();
+  const err=document.getElementById('rev-err'); err.style.display='none';
+  if(!currentRating){err.textContent='Please select a star rating.';err.style.display='block';return;}
+  const r=await postReview(currentReviewData.projectId,getUserId(),currentReviewData.revieweeId,currentRating,comment);
+  if(r.error){err.textContent=r.error;err.style.display='block';return;}
+  showToast('Review submitted!','success');
+  document.getElementById('review-modal').classList.remove('open');
+}
+
+async function submitProject() {
+  const title=document.getElementById('pt').value.trim(), desc=document.getElementById('pd').value.trim();
+  const budget=document.getElementById('pb').value, deadline=document.getElementById('pdl').value;
+  const err=document.getElementById('merr'); err.style.display='none';
+  if(!title||!desc||!budget||!deadline){err.textContent='All fields required.';err.style.display='block';return;}
+  const r=await createProject(getUserId(),title,desc,parseFloat(budget),deadline);
+  if(r.error){err.textContent=r.error;err.style.display='block';return;}
+  showToast('Project posted!','success');
+  document.getElementById('pm').classList.remove('open');
+  ['pt','pd','pb','pdl'].forEach(id=>document.getElementById(id).value='');
+  load();
+}
+load();
+</script>
+</body></html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Contracts — FreelancerHub</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;}
+.sidebar{width:230px;background:#1E1B4B;min-height:100vh;padding:1.5rem 1rem;display:flex;flex-direction:column;gap:.2rem;flex-shrink:0;position:sticky;top:0;height:100vh;}
+.sidebar-logo{font-weight:800;font-size:1.15rem;color:#fff;padding:.75rem 1rem;margin-bottom:1rem;}
+.nav-item{display:flex;align-items:center;gap:.75rem;padding:.65rem 1rem;border-radius:8px;color:rgba(255,255,255,.65);font-size:.875rem;font-weight:500;text-decoration:none;transition:all .2s;}
+.nav-item:hover,.nav-item.active{background:rgba(255,255,255,.12);color:#fff;}
+.nav-divider{height:1px;background:rgba(255,255,255,.1);margin:.75rem 0;}
+.nav-logout{margin-top:auto;color:#F87171!important;}
+.main{flex:1;padding:2rem;overflow-y:auto;}
+.page-header{margin-bottom:2rem;}
+.page-header h1{font-size:1.5rem;font-weight:700;color:#0F172A;margin:0 0 .3rem;}
+.page-header p{color:#64748B;margin:0;}
+.contract-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:1.5rem;margin-bottom:1rem;transition:box-shadow .2s;}
+.contract-card:hover{box-shadow:0 4px 16px rgba(79,70,229,.1);}
+.contract-header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1rem;}
+.contract-title{font-weight:700;font-size:1rem;color:#0F172A;}
+.contract-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;padding:1rem;background:#F8FAFC;border-radius:8px;margin-bottom:1rem;}
+.meta-item label{display:block;font-size:.72rem;font-weight:600;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.15rem;}
+.meta-item span{font-size:.88rem;font-weight:600;color:#0F172A;}
+.contract-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
+.empty{text-align:center;padding:3rem;color:#94A3B8;}
+.empty-icon{font-size:2.5rem;margin-bottom:.75rem;}
+@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">🚀 FreelancerHub</div>
+  <div id="nav-links"></div>
+  <div class="nav-divider"></div>
+  <a class="nav-item nav-logout" href="#" onclick="logoutUser()" style="margin-top:auto;">🚪 Logout</a>
+</aside>
+<main class="main">
+  <div class="page-header">
+    <h1>📄 Contracts</h1>
+    <p id="page-sub">View and manage your active contracts.</p>
+  </div>
+  <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+    <button class="btn btn-outline btn-sm" onclick="filter('all',this)">All</button>
+    <button class="btn btn-ghost btn-sm" onclick="filter('active',this)">Active</button>
+    <button class="btn btn-ghost btn-sm" onclick="filter('completed',this)">Completed</button>
+  </div>
+  <div id="contracts-list"><div class="empty"><div class="empty-icon">⏳</div><p>Loading contracts...</p></div></div>
+</main>
+<script src="js/api.js"></script>
+<script>
+const role = getRole();
+if(!getToken()) window.location.href='login.html';
+
+// Build sidebar based on role
+const navLinks = role==='client' ? `
+  <a class="nav-item" href="client-dashboard.html">📊 Dashboard</a>
+  <a class="nav-item" href="my-projects.html">📁 My Projects</a>
+  <a class="nav-item" href="messages.html">💬 Messages</a>
+  <a class="nav-item active" href="contracts.html">📄 Contracts</a>
+  <a class="nav-item" href="reviews.html">⭐ Reviews</a>` : `
+  <a class="nav-item" href="freelancer-dashboard.html">📊 Dashboard</a>
+  <a class="nav-item" href="my-bids.html">💼 My Bids</a>
+  <a class="nav-item active" href="contracts.html">📄 Contracts</a>
+  <a class="nav-item" href="messages.html">💬 Messages</a>
+  <a class="nav-item" href="reviews.html">⭐ Reviews</a>`;
+document.getElementById('nav-links').innerHTML = navLinks;
+
+let allContracts=[];
+
+async function load() {
+  const uid = getUserId();
+  const contracts = role==='client'
+    ? await getClientContracts(uid).catch(()=>[])
+    : await getFreelancerContracts(uid).catch(()=>[]);
+  allContracts = Array.isArray(contracts)?contracts:[];
+  render(allContracts);
+}
+
+function filter(status, btn) {
+  document.querySelectorAll('button').forEach(b=>{ if(b.onclick&&b.onclick.toString().includes('filter')) b.className='btn btn-ghost btn-sm'; });
+  if(btn) btn.className='btn btn-outline btn-sm';
+  render(status==='all'?allContracts:allContracts.filter(c=>c.status===status));
+}
+
+function render(contracts) {
+  const el = document.getElementById('contracts-list');
+  if(!contracts.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><p>No contracts found.</p></div>`; return; }
+  el.innerHTML = contracts.map(c=>{
+    const otherParty = role==='client' ? c.freelancer : c.project?.client;
+    const otherLabel = role==='client' ? 'Freelancer' : 'Client';
+    return `
+    <div class="contract-card">
+      <div class="contract-header">
+        <div class="contract-title">📄 ${c.project?.title||'Contract'}</div>
+        ${statusBadge(c.status)}
+      </div>
+      <div class="contract-meta">
+        <div class="meta-item"><label>${otherLabel}</label><span>👤 ${otherParty?.name||'—'}</span></div>
+        <div class="meta-item"><label>Start Date</label><span>📅 ${formatDate(c.startDate)}</span></div>
+        <div class="meta-item"><label>End Date</label><span>📅 ${formatDate(c.endDate)}</span></div>
+        <div class="meta-item"><label>Budget</label><span>💰 $${c.project?.budget||'—'}</span></div>
+      </div>
+      <div class="contract-actions">
+        <button class="btn btn-outline btn-sm" onclick="window.location.href='messages.html?to=${otherParty?.userId}'">💬 Message</button>
+        ${c.status==='active'&&role==='client'?`<button class="btn btn-success btn-sm" onclick="markComplete(${c.contractId})">✅ Mark Complete</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function markComplete(id) {
+  if(!confirm('Mark this contract as completed?')) return;
+  const r = await completeContract(id);
+  if(r.error){showToast(r.error,'error');return;}
+  showToast('Contract marked as completed!','success'); load();
+}
+load();
+</script>
+</body></html>

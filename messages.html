@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Messages — FreelancerHub</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',sans-serif;background:#F8FAFC;height:100vh;display:flex;overflow:hidden;}
+
+  /* ── Sidebar ── */
+  .sidebar{width:240px;background:#1E1B4B;display:flex;flex-direction:column;flex-shrink:0;}
+  .sidebar-logo{padding:1.25rem;font-size:1.1rem;font-weight:800;color:#fff;border-bottom:1px solid rgba(255,255,255,.1);}
+  .sidebar-logo span{color:#A5B4FC;}
+  .sidebar-nav{padding:.75rem 0;flex:1;}
+  .nav-item{display:flex;align-items:center;gap:.75rem;padding:.65rem 1.25rem;color:rgba(255,255,255,.7);font-size:.85rem;font-weight:500;text-decoration:none;transition:all .2s;}
+  .nav-item:hover,.nav-item.active{background:rgba(255,255,255,.1);color:#fff;}
+  .nav-icon{width:20px;text-align:center;}
+  .sidebar-footer{padding:1rem 1.25rem;border-top:1px solid rgba(255,255,255,.1);}
+  .user-chip{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;}
+  .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#4F46E5,#7C3AED);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.8rem;flex-shrink:0;}
+  .user-name{font-size:.8rem;font-weight:600;color:#fff;}
+  .user-role{font-size:.7rem;color:rgba(255,255,255,.5);}
+  .logout-btn{width:100%;padding:.55rem;background:rgba(239,68,68,.15);color:#FCA5A5;border:1px solid rgba(239,68,68,.3);border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;}
+  .logout-btn:hover{background:rgba(239,68,68,.3);}
+
+  /* ── Inbox panel ── */
+  .inbox-panel{width:300px;background:#fff;border-right:1px solid #E2E8F0;display:flex;flex-direction:column;flex-shrink:0;}
+  .inbox-header{padding:1.25rem 1rem;border-bottom:1px solid #E2E8F0;}
+  .inbox-header h2{font-size:1.05rem;font-weight:800;color:#0F172A;margin-bottom:.75rem;}
+  .inbox-search{width:100%;padding:.55rem .85rem;border:1.5px solid #E2E8F0;border-radius:8px;font-size:.85rem;outline:none;}
+  .inbox-search:focus{border-color:#4F46E5;}
+  .inbox-list{flex:1;overflow-y:auto;}
+  .conversation-item{display:flex;align-items:center;gap:.85rem;padding:.9rem 1rem;cursor:pointer;border-bottom:1px solid #F1F5F9;transition:background .15s;}
+  .conversation-item:hover,.conversation-item.active{background:#EEF2FF;}
+  .conv-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;}
+  .conv-info{flex:1;min-width:0;}
+  .conv-name{font-size:.875rem;font-weight:700;color:#0F172A;margin-bottom:.15rem;}
+  .conv-preview{font-size:.78rem;color:#94A3B8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .new-chat-btn{margin:1rem;padding:.65rem;background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;}
+  .new-chat-btn:hover{opacity:.9;}
+
+  /* ── Chat panel ── */
+  .chat-panel{flex:1;display:flex;flex-direction:column;background:#F8FAFC;}
+  .chat-header{padding:1rem 1.5rem;background:#fff;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;gap:1rem;}
+  .chat-header-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;color:#fff;}
+  .chat-header-name{font-size:1rem;font-weight:700;color:#0F172A;}
+  .chat-header-status{font-size:.78rem;color:#22C55E;font-weight:500;}
+  .chat-messages{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:.75rem;}
+  .msg{max-width:68%;display:flex;flex-direction:column;gap:.25rem;}
+  .msg.sent{align-self:flex-end;align-items:flex-end;}
+  .msg.received{align-self:flex-start;align-items:flex-start;}
+  .msg-bubble{padding:.75rem 1rem;border-radius:16px;font-size:.875rem;line-height:1.5;word-wrap:break-word;}
+  .msg.sent .msg-bubble{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;border-bottom-right-radius:4px;}
+  .msg.received .msg-bubble{background:#fff;color:#0F172A;border:1px solid #E2E8F0;border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .msg-time{font-size:.7rem;color:#94A3B8;padding:0 .25rem;}
+  .msg-sender{font-size:.72rem;color:#64748B;font-weight:600;padding:0 .25rem;}
+  .chat-input-area{padding:1rem 1.5rem;background:#fff;border-top:1px solid #E2E8F0;display:flex;gap:.75rem;align-items:flex-end;}
+  .chat-input{flex:1;padding:.75rem 1rem;border:2px solid #E2E8F0;border-radius:12px;font-size:.9rem;resize:none;outline:none;max-height:120px;font-family:inherit;transition:border-color .2s;}
+  .chat-input:focus{border-color:#4F46E5;}
+  .send-btn{padding:.75rem 1.25rem;background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;border:none;border-radius:12px;cursor:pointer;font-size:1rem;flex-shrink:0;transition:opacity .2s;}
+  .send-btn:hover{opacity:.9;}
+  .send-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  /* ── Empty states ── */
+  .no-chat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94A3B8;text-align:center;padding:2rem;}
+  .no-chat-icon{font-size:3rem;margin-bottom:1rem;}
+  .no-chat h3{color:#475569;font-size:1rem;margin-bottom:.5rem;}
+  .no-inbox{padding:2rem;text-align:center;color:#94A3B8;}
+
+  /* ── New chat modal ── */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:200;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:#fff;border-radius:16px;padding:1.75rem;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.15);}
+  .modal h3{font-size:1.1rem;font-weight:800;margin-bottom:1.25rem;color:#0F172A;}
+  .modal input{width:100%;padding:.65rem .9rem;border:2px solid #E2E8F0;border-radius:8px;font-size:.9rem;outline:none;margin-bottom:1rem;}
+  .modal input:focus{border-color:#4F46E5;}
+  .modal-actions{display:flex;gap:.75rem;}
+  .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1.25rem;border-radius:8px;font-size:.85rem;font-weight:600;border:none;cursor:pointer;transition:all .2s;}
+  .btn-primary{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;}
+  .btn-ghost{background:#F8FAFC;color:#475569;border:1px solid #E2E8F0;}
+
+  @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .msg{animation:slideIn .2s ease;}
+
+  /* ── Date divider ── */
+  .date-divider{text-align:center;font-size:.72rem;color:#94A3B8;padding:.25rem 0;position:relative;}
+  .date-divider::before,.date-divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:#E2E8F0;}
+  .date-divider::before{left:0;} .date-divider::after{right:0;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">Freelancer<span>Hub</span></div>
+  <nav class="sidebar-nav">
+    <a id="dashboard-link" href="#" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="messages.html" class="nav-item active"><span class="nav-icon">💬</span> Messages</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="sidebar-avatar">U</div>
+      <div>
+        <div class="user-name" id="sidebar-name">User</div>
+        <div class="user-role" id="sidebar-role">Account</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="logoutUser()">🚪 Sign Out</button>
+  </div>
+</aside>
+
+<!-- INBOX PANEL -->
+<div class="inbox-panel">
+  <div class="inbox-header">
+    <h2>💬 Messages</h2>
+    <input type="text" class="inbox-search" placeholder="Search conversations..." id="inbox-search" oninput="filterConversations()">
+  </div>
+  <div class="inbox-list" id="inbox-list">
+    <div class="no-inbox">Loading conversations...</div>
+  </div>
+  <button class="new-chat-btn" onclick="openNewChatModal()">✏️ New Message</button>
+</div>
+
+<!-- CHAT PANEL -->
+<div class="chat-panel" id="chat-panel">
+  <div class="no-chat" id="no-chat-state">
+    <div class="no-chat-icon">💬</div>
+    <h3>Select a conversation</h3>
+    <p>Choose from the left or start a new message</p>
+  </div>
+  <div id="active-chat" style="display:none;flex-direction:column;height:100%;">
+    <div class="chat-header">
+      <div class="chat-header-avatar" id="chat-avatar">U</div>
+      <div>
+        <div class="chat-header-name" id="chat-name">User</div>
+        <div class="chat-header-status">● Online</div>
+      </div>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chat-input" placeholder="Type a message..." rows="1"
+        onkeydown="handleEnter(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" onclick="sendMsg()" id="send-btn">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW CHAT MODAL -->
+<div class="modal-overlay" id="new-chat-modal">
+  <div class="modal">
+    <h3>New Message</h3>
+    <input type="number" id="new-chat-userid" placeholder="Enter User ID to message">
+    <input type="text" id="new-chat-name"   placeholder="Their name (for display)">
+    <div id="new-chat-error" style="color:#B91C1C;font-size:.82rem;margin-bottom:.75rem;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="startNewChat()">Start Chat</button>
+      <button class="btn btn-ghost"   onclick="closeNewChatModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  requireAuth();
+
+  // ── Setup ─────────────────────────────────────────────────
+  const myId   = parseInt(getUserId());
+  const myName = getName();
+  const myRole = getRole();
+
+  document.getElementById('sidebar-name').textContent = myName || 'User';
+  document.getElementById('sidebar-role').textContent = myRole === 'client' ? 'Client Account' : 'Freelancer Account';
+  document.getElementById('sidebar-avatar').textContent = (myName||'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('dashboard-link').href = myRole === 'client' ? 'client-dashboard.html' : 'freelancer-dashboard.html';
+
+  let conversations = [];   // [{userId, name, color}]
+  let activeUserId  = null;
+  let pollInterval  = null;
+
+  // Avatar colors
+  const colors = ['#4F46E5','#7C3AED','#0891B2','#0D9488','#D97706','#DC2626','#7C3AED','#059669'];
+  function colorFor(id) { return colors[parseInt(id) % colors.length]; }
+
+  // ── Load inbox ────────────────────────────────────────────
+  async function loadInbox() {
+    try {
+      const partners = await getInbox();
+      if (!partners || !partners.length) {
+        document.getElementById('inbox-list').innerHTML =
+          '<div class="no-inbox">No conversations yet.<br>Click "New Message" to start one.</div>';
+        return;
+      }
+      conversations = partners.map(u => ({
+        userId: u.userId || u.user_id,
+        name:   u.name || `User ${u.userId}`,
+        color:  colorFor(u.userId || 0)
+      }));
+      renderInbox(conversations);
+    } catch(e) {
+      document.getElementById('inbox-list').innerHTML =
+        '<div class="no-inbox">Could not load conversations.</div>';
+    }
+  }
+
+  function renderInbox(list) {
+    const el = document.getElementById('inbox-list');
+    el.innerHTML = list.length
+      ? list.map(c => `
+          <div class="conversation-item ${c.userId === activeUserId ? 'active' : ''}"
+               onclick="openChat(${c.userId},'${c.name.replace(/'/g,"\\'")}','${c.color}')">
+            <div class="conv-avatar" style="background:${c.color};">${c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+            <div class="conv-info">
+              <div class="conv-name">${c.name}</div>
+              <div class="conv-preview">Click to view conversation</div>
+            </div>
+          </div>`).join('')
+      : '<div class="no-inbox">No conversations yet.</div>';
+  }
+
+  function filterConversations() {
+    const q = document.getElementById('inbox-search').value.toLowerCase();
+    renderInbox(conversations.filter(c => c.name.toLowerCase().includes(q)));
+  }
+
+  // ── Open chat ─────────────────────────────────────────────
+  async function openChat(userId, name, color) {
+    activeUserId = userId;
+
+    // Update inbox active state
+    document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
+    event?.currentTarget?.classList.add('active');
+
+    // Update chat header
+    document.getElementById('chat-name').textContent = name;
+    document.getElementById('chat-avatar').textContent = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('chat-avatar').style.background = color || '#4F46E5';
+
+    // Show chat
+    document.getElementById('no-chat-state').style.display = 'none';
+    const activeChat = document.getElementById('active-chat');
+    activeChat.style.display = 'flex';
+
+    await loadMessages();
+
+    // Auto-poll every 5s for new messages
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(loadMessages, 5000);
+
+    // Focus input
+    document.getElementById('chat-input').focus();
+  }
+
+  // ── Load messages ──────────────────────────────────────────
+  async function loadMessages() {
+    if (!activeUserId) return;
+    try {
+      const messages = await getConversation(activeUserId);
+      renderMessages(messages);
+    } catch(e) { console.error('Failed to load messages', e); }
+  }
+
+  function renderMessages(messages) {
+    const el = document.getElementById('chat-messages');
+    if (!messages || !messages.length) {
+      el.innerHTML = '<div style="text-align:center;color:#94A3B8;padding:2rem;font-size:.875rem;">No messages yet. Say hello! 👋</div>';
+      return;
+    }
+
+    let lastDate = '';
+    const html = messages.map(m => {
+      const isSent = parseInt(m.sender?.userId) === myId;
+      const time   = m.timestamp ? new Date(m.timestamp) : new Date();
+      const dateStr = time.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+      const timeStr = time.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+
+      let dateDivider = '';
+      if (dateStr !== lastDate) {
+        lastDate = dateStr;
+        dateDivider = `<div class="date-divider">${dateStr}</div>`;
+      }
+
+      return `${dateDivider}
+        <div class="msg ${isSent ? 'sent' : 'received'}">
+          ${!isSent ? `<div class="msg-sender">${m.sender?.name || 'User'}</div>` : ''}
+          <div class="msg-bubble">${escapeHtml(m.message)}</div>
+          <div class="msg-time">${timeStr}</div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = html;
+
+    // Scroll to bottom
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // ── Send message ──────────────────────────────────────────
+  async function sendMsg() {
+    const input   = document.getElementById('chat-input');
+    const btn     = document.getElementById('send-btn');
+    const message = input.value.trim();
+
+    if (!message || !activeUserId) return;
+
+    btn.disabled = true;
+    input.value = '';
+    input.style.height = 'auto';
+
+    try {
+      await sendMessage(activeUserId, message);
+      await loadMessages();
+    } catch(e) {
+      showToast('Failed to send message.', 'error');
+      input.value = message; // Restore on failure
+    } finally {
+      btn.disabled = false;
+      input.focus();
+    }
+  }
+
+  function handleEnter(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMsg();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  // ── New chat modal ────────────────────────────────────────
+  function openNewChatModal() {
+    document.getElementById('new-chat-userid').value = '';
+    document.getElementById('new-chat-name').value   = '';
+    document.getElementById('new-chat-error').textContent = '';
+    document.getElementById('new-chat-modal').classList.add('open');
+  }
+  function closeNewChatModal() {
+    document.getElementById('new-chat-modal').classList.remove('open');
+  }
+
+  function startNewChat() {
+    const userId = document.getElementById('new-chat-userid').value.trim();
+    const name   = document.getElementById('new-chat-name').value.trim() || `User ${userId}`;
+    const errEl  = document.getElementById('new-chat-error');
+
+    if (!userId || isNaN(userId)) {
+      errEl.textContent = 'Please enter a valid User ID.';
+      return;
+    }
+    if (parseInt(userId) === myId) {
+      errEl.textContent = 'You cannot message yourself.';
+      return;
+    }
+
+    // Add to conversations if not already there
+    const exists = conversations.find(c => c.userId === parseInt(userId));
+    if (!exists) {
+      conversations.unshift({ userId: parseInt(userId), name, color: colorFor(userId) });
+      renderInbox(conversations);
+    }
+
+    closeNewChatModal();
+    openChat(parseInt(userId), name, colorFor(userId));
+  }
+
+  // ── Utility ───────────────────────────────────────────────
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/\n/g,'<br>');
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  loadInbox();
+
+  // Check URL for pre-selected user
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('user')) {
+    const uid  = parseInt(params.get('user'));
+    const name = params.get('name') || `User ${uid}`;
+    setTimeout(() => openChat(uid, name, colorFor(uid)), 500);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Reviews — FreelancerHub</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;}
+.sidebar{width:230px;background:#1E1B4B;min-height:100vh;padding:1.5rem 1rem;display:flex;flex-direction:column;gap:.2rem;flex-shrink:0;position:sticky;top:0;height:100vh;}
+.sidebar-logo{font-weight:800;font-size:1.15rem;color:#fff;padding:.75rem 1rem;margin-bottom:1rem;}
+.nav-item{display:flex;align-items:center;gap:.75rem;padding:.65rem 1rem;border-radius:8px;color:rgba(255,255,255,.65);font-size:.875rem;font-weight:500;text-decoration:none;transition:all .2s;}
+.nav-item:hover,.nav-item.active{background:rgba(255,255,255,.12);color:#fff;}
+.nav-divider{height:1px;background:rgba(255,255,255,.1);margin:.75rem 0;}
+.nav-logout{margin-top:auto;color:#F87171!important;}
+.main{flex:1;padding:2rem;overflow-y:auto;}
+.page-header{margin-bottom:2rem;}
+.page-header h1{font-size:1.5rem;font-weight:700;color:#0F172A;margin:0 0 .3rem;}
+.rating-summary{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:2rem;margin-bottom:2rem;display:flex;align-items:center;gap:2.5rem;flex-wrap:wrap;}
+.big-rating{text-align:center;}
+.big-number{font-size:3.5rem;font-weight:800;color:#0F172A;line-height:1;}
+.big-stars{font-size:1.5rem;margin:.25rem 0;}
+.big-count{font-size:.85rem;color:#64748B;}
+.rating-bars{flex:1;min-width:200px;}
+.bar-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.4rem;}
+.bar-label{font-size:.8rem;color:#64748B;width:30px;text-align:right;flex-shrink:0;}
+.bar-track{flex:1;height:8px;background:#F1F5F9;border-radius:999px;overflow:hidden;}
+.bar-fill{height:100%;background:linear-gradient(90deg,#F59E0B,#EAB308);border-radius:999px;transition:width .5s;}
+.bar-count{font-size:.78rem;color:#64748B;width:20px;flex-shrink:0;}
+.review-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:1.25rem;margin-bottom:.75rem;transition:box-shadow .2s;}
+.review-card:hover{box-shadow:0 4px 16px rgba(79,70,229,.1);}
+.review-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem;}
+.reviewer-info{display:flex;align-items:center;gap:.75rem;}
+.reviewer-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0;}
+.reviewer-name{font-weight:700;font-size:.9rem;color:#0F172A;}
+.review-date{font-size:.78rem;color:#94A3B8;margin-top:.1rem;}
+.review-project{font-size:.82rem;color:#64748B;font-style:italic;margin-bottom:.5rem;}
+.review-comment{font-size:.88rem;color:#475569;line-height:1.65;}
+.empty{text-align:center;padding:3rem;color:#94A3B8;}
+.empty-icon{font-size:2.5rem;margin-bottom:.75rem;}
+@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">🚀 FreelancerHub</div>
+  <div id="nav-links"></div>
+  <div class="nav-divider"></div>
+  <a class="nav-item nav-logout" href="#" onclick="logoutUser()" style="margin-top:auto;">🚪 Logout</a>
+</aside>
+<main class="main">
+  <div class="page-header">
+    <h1>⭐ Reviews & Ratings</h1>
+    <p>See what others are saying about your work.</p>
+  </div>
+  <div class="rating-summary" id="rating-summary">
+    <div style="text-align:center;color:#94A3B8;width:100%">Loading ratings...</div>
+  </div>
+  <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap;">
+    <button class="btn btn-outline btn-sm" onclick="showTab('received',this)">Reviews Received</button>
+    <button class="btn btn-ghost btn-sm" onclick="showTab('given',this)">Reviews Given</button>
+  </div>
+  <div id="reviews-list"><div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div></div>
+</main>
+<script src="js/api.js"></script>
+<script>
+const role = getRole();
+if(!getToken()) window.location.href='login.html';
+
+const navLinks = role==='client' ? `
+  <a class="nav-item" href="client-dashboard.html">📊 Dashboard</a>
+  <a class="nav-item" href="my-projects.html">📁 My Projects</a>
+  <a class="nav-item" href="messages.html">💬 Messages</a>
+  <a class="nav-item" href="contracts.html">📄 Contracts</a>
+  <a class="nav-item active" href="reviews.html">⭐ Reviews</a>` : `
+  <a class="nav-item" href="freelancer-dashboard.html">📊 Dashboard</a>
+  <a class="nav-item" href="my-bids.html">💼 My Bids</a>
+  <a class="nav-item" href="contracts.html">📄 Contracts</a>
+  <a class="nav-item" href="messages.html">💬 Messages</a>
+  <a class="nav-item active" href="reviews.html">⭐ Reviews</a>`;
+document.getElementById('nav-links').innerHTML = navLinks;
+
+let receivedReviews=[], givenReviews=[];
+
+async function load() {
+  const uid = getUserId();
+  const [received, given, ratingData] = await Promise.all([
+    getReviewsForUser(uid).catch(()=>[]),
+    fetch(`${API_BASE}/reviews/given/${uid}`,{headers:{Authorization:`Bearer ${getToken()}`}}).then(r=>r.json()).catch(()=>[]),
+    getAverageRating(uid).catch(()=>({averageRating:0,totalReviews:0}))
+  ]);
+  receivedReviews = Array.isArray(received)?received:[];
+  givenReviews    = Array.isArray(given)?given:[];
+
+  // Rating summary
+  const avg = ratingData.averageRating||0;
+  const total = ratingData.totalReviews||0;
+  const counts = [5,4,3,2,1].map(n=>receivedReviews.filter(r=>r.rating===n).length);
+  document.getElementById('rating-summary').innerHTML = total===0 ? `<div style="text-align:center;color:#94A3B8;width:100%">No reviews yet.</div>` : `
+    <div class="big-rating">
+      <div class="big-number">${avg.toFixed(1)}</div>
+      <div class="big-stars">${starRating(Math.round(avg))}</div>
+      <div class="big-count">${total} review${total!==1?'s':''}</div>
+    </div>
+    <div class="rating-bars">
+      ${[5,4,3,2,1].map((n,i)=>`
+        <div class="bar-row">
+          <div class="bar-label">${n}★</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${total>0?(counts[i]/total*100):0}%"></div></div>
+          <div class="bar-count">${counts[i]}</div>
+        </div>`).join('')}
+    </div>`;
+
+  showTab('received');
+}
+
+function showTab(tab, btn) {
+  document.querySelectorAll('.main button').forEach(b=>{ if(b.onclick&&b.onclick.toString().includes('showTab')) b.className='btn btn-ghost btn-sm'; });
+  if(btn) btn.className='btn btn-outline btn-sm';
+  const reviews = tab==='received'?receivedReviews:givenReviews;
+  const el = document.getElementById('reviews-list');
+  if(!reviews.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><p>No reviews ${tab==='received'?'received':'given'} yet.</p></div>`; return; }
+  el.innerHTML = reviews.map(r=>{
+    const person = tab==='received' ? r.reviewer : r.reviewee;
+    const initial = (person?.name||'U')[0].toUpperCase();
+    return `
+    <div class="review-card">
+      <div class="review-header">
+        <div class="reviewer-info">
+          <div class="reviewer-avatar">${initial}</div>
+          <div>
+            <div class="reviewer-name">${person?.name||'User'}</div>
+            <div class="review-date">${tab==='received'?'Reviewed you':'You reviewed them'}</div>
+          </div>
+        </div>
+        <div style="font-size:1.1rem">${starRating(r.rating)}</div>
+      </div>
+      <div class="review-project">📁 ${r.project?.title||'Project'}</div>
+      ${r.comment?`<div class="review-comment">"${r.comment}"</div>`:'<div class="review-comment" style="color:#94A3B8;font-style:italic">No comment provided.</div>'}
+    </div>`;
+  }).join('');
+}
+
+const API_BASE = 'https://web-production-bc088.up.railway.app/api';
+load();
+</script>
+</body></html>

@@ -1,48 +1,23 @@
-// ── This file is the bridge between your HTML and Java backend ──
+// ============================================================
+// FreelancerHub — api.js
+// Central API bridge between HTML frontend and Java backend.
+// Every backend call goes through this file.
+// ============================================================
 
-const API_BASE = 'https://web-production-bc088.up.railway.app/api';  // ← your Java server
+const API_BASE = 'https://web-production-bc088.up.railway.app/api';
 
-// Helper: get JWT token from storage
-function getToken() {
-    return localStorage.getItem('token');
-}
+// ── Helpers ──────────────────────────────────────────────────
 
-// Helper: build headers (with or without auth)
+function getToken()   { return localStorage.getItem('token'); }
+function getUserId()  { return localStorage.getItem('userId'); }
+function getRole()    { return localStorage.getItem('role'); }
+function getUserName(){ return localStorage.getItem('userName'); }
+function isLoggedIn() { return !!getToken(); }
+
 function headers(requiresAuth = false) {
     const h = { 'Content-Type': 'application/json' };
-    if (requiresAuth) {
-        h['Authorization'] = `Bearer ${getToken()}`;
-    }
+    if (requiresAuth) h['Authorization'] = `Bearer ${getToken()}`;
     return h;
-}
-
-// ── AUTH ─────────────────────────────────────────────────────
-
-async function registerUser(name, email, password, role) {
-    const response = await fetch(`${API_BASE}/auth/register`, {
-        method: 'POST',
-        headers: headers(),
-        body: JSON.stringify({ name, email, password, role })
-    });
-    return response.json();
-}
-
-async function loginUser(email, password) {
-    const response = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: headers(),
-        body: JSON.stringify({ email, password })
-    });
-    const data = await response.json();
-
-    // Save token + user info to localStorage
-    if (data.token) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('role', data.role);
-        localStorage.setItem('userId', data.userId);
-        localStorage.setItem('userName', data.name);
-    }
-    return data;
 }
 
 function logoutUser() {
@@ -50,82 +25,181 @@ function logoutUser() {
     window.location.href = 'login.html';
 }
 
+function requireAuth() {
+    if (!isLoggedIn()) { window.location.href = 'login.html'; return false; }
+    return true;
+}
+
+// ── AUTH ─────────────────────────────────────────────────────
+
+async function registerUser(name, email, password, role) {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST', headers: headers(),
+        body: JSON.stringify({ name, email, password, role })
+    });
+    return res.json();
+}
+
+async function loginUser(email, password) {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST', headers: headers(),
+        body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (data.token) {
+        localStorage.setItem('token',    data.token);
+        localStorage.setItem('role',     data.role);
+        localStorage.setItem('userId',   data.userId);
+        localStorage.setItem('userName', data.name);
+    }
+    return data;
+}
+
 // ── PROJECTS ─────────────────────────────────────────────────
 
 async function fetchProjects() {
-    const response = await fetch(`${API_BASE}/projects`, {
-        headers: headers()
-    });
-    return response.json();
+    const res = await fetch(`${API_BASE}/projects`, { headers: headers() });
+    return res.json();
 }
 
 async function searchProjects(keyword) {
-    const response = await fetch(`${API_BASE}/projects/search?keyword=${keyword}`, {
-        headers: headers()
-    });
-    return response.json();
+    const res = await fetch(`${API_BASE}/projects/search?keyword=${encodeURIComponent(keyword)}`, { headers: headers() });
+    return res.json();
+}
+
+async function getClientProjects(clientId) {
+    const res = await fetch(`${API_BASE}/projects/client/${clientId}`, { headers: headers(true) });
+    return res.json();
 }
 
 async function createProject(title, description, budget, deadline) {
-    const response = await fetch(`${API_BASE}/projects`, {
-        method: 'POST',
-        headers: headers(true),   // ← requires login
-        body: JSON.stringify({ title, description, budget, deadline })
+    const res = await fetch(`${API_BASE}/projects`, {
+        method: 'POST', headers: headers(true),
+        body: JSON.stringify({ clientId: parseInt(getUserId()), title, description, budget: parseFloat(budget), deadline })
     });
-    return response.json();
+    return res.json();
 }
 
 async function deleteProject(projectId) {
-    const response = await fetch(`${API_BASE}/projects/${projectId}`, {
-        method: 'DELETE',
-        headers: headers(true)
-    });
-    return response.json();
+    const res = await fetch(`${API_BASE}/projects/${projectId}`, { method: 'DELETE', headers: headers(true) });
+    return res.json();
 }
 
 // ── BIDS ─────────────────────────────────────────────────────
 
 async function placeBid(projectId, bidAmount, proposal) {
-    const response = await fetch(`${API_BASE}/bids`, {
-        method: 'POST',
-        headers: headers(true),
-        body: JSON.stringify({ projectId, bidAmount, proposal })
+    const res = await fetch(`${API_BASE}/bids`, {
+        method: 'POST', headers: headers(true),
+        body: JSON.stringify({ projectId: parseInt(projectId), freelancerId: parseInt(getUserId()), bidAmount: parseFloat(bidAmount), proposal })
     });
-    return response.json();
+    return res.json();
 }
 
 async function getProjectBids(projectId) {
-    const response = await fetch(`${API_BASE}/projects/${projectId}/bids`, {
-        headers: headers(true)
+    const res = await fetch(`${API_BASE}/projects/${projectId}/bids`, { headers: headers(true) });
+    return res.json();
+}
+
+async function getFreelancerBids(freelancerId) {
+    const res = await fetch(`${API_BASE}/bids/freelancer/${freelancerId}`, { headers: headers(true) });
+    return res.json();
+}
+
+async function updateBidStatus(bidId, status) {
+    const res = await fetch(`${API_BASE}/bids/${bidId}/status`, {
+        method: 'PUT', headers: headers(true),
+        body: JSON.stringify({ status })
     });
-    return response.json();
+    return res.json();
+}
+
+// ── REVIEWS ──────────────────────────────────────────────────
+
+async function getReviews(userId) {
+    const res = await fetch(`${API_BASE}/reviews/${userId}`, { headers: headers(true) });
+    return res.json();
+}
+
+async function postReview(projectId, revieweeId, rating, comment) {
+    const res = await fetch(`${API_BASE}/reviews`, {
+        method: 'POST', headers: headers(true),
+        body: JSON.stringify({ projectId: parseInt(projectId), reviewerId: parseInt(getUserId()), revieweeId: parseInt(revieweeId), rating: parseInt(rating), comment })
+    });
+    return res.json();
 }
 
 // ── MESSAGES ─────────────────────────────────────────────────
 
+async function getInbox(userId) {
+    const res = await fetch(`${API_BASE}/messages/inbox/${userId}`, { headers: headers(true) });
+    return res.json();
+}
+
+async function getConversation(senderId, receiverId) {
+    const res = await fetch(`${API_BASE}/messages/${senderId}/${receiverId}`, { headers: headers(true) });
+    return res.json();
+}
+
 async function sendMessage(receiverId, message) {
-    const response = await fetch(`${API_BASE}/messages`, {
-        method: 'POST',
-        headers: headers(true),
-        body: JSON.stringify({ receiverId, message })
+    const res = await fetch(`${API_BASE}/messages`, {
+        method: 'POST', headers: headers(true),
+        body: JSON.stringify({ senderId: parseInt(getUserId()), receiverId: parseInt(receiverId), message })
     });
-    return response.json();
+    return res.json();
 }
 
-async function getMessages(senderId, receiverId) {
-    const response = await fetch(`${API_BASE}/messages/${senderId}/${receiverId}`, {
-        headers: headers(true)
-    });
-    return response.json();
+// ── UI HELPERS ────────────────────────────────────────────────
+
+function showToast(message, type = 'success') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.75rem;';
+        document.body.appendChild(container);
+    }
+    const icons   = { success: '✅', error: '❌', info: 'ℹ️' };
+    const colors  = { success: '#065F46', error: '#B91C1C', info: '#1E40AF' };
+    const toast   = document.createElement('div');
+    toast.style.cssText = `display:flex;align-items:center;gap:.75rem;padding:.9rem 1.25rem;border-radius:10px;background:${colors[type]||colors.info};color:#fff;font-size:.9rem;font-weight:500;box-shadow:0 10px 40px rgba(0,0,0,.25);min-width:280px;`;
+    toast.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
 }
 
-// ── REVIEWS ─────────────────────────────────────────────────
+function starRating(rating) {
+    return Array.from({length:5},(_,i)=>`<span style="color:${i<rating?'#F59E0B':'#D1D5DB'};font-size:1.1rem;">★</span>`).join('');
+}
 
-async function postReview(projectId, revieweeId, rating, comment) {
-    const response = await fetch(`${API_BASE}/reviews`, {
-        method: 'POST',
-        headers: headers(true),
-        body: JSON.stringify({ projectId, revieweeId, rating, comment })
-    });
-    return response.json();
+function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+}
+
+function formatCurrency(n) {
+    return '$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function timeAgo(d) {
+    const diff = Date.now()-new Date(d).getTime();
+    const m = Math.floor(diff/60000);
+    if (m<1) return 'just now';
+    if (m<60) return m+'m ago';
+    if (m<1440) return Math.floor(m/60)+'h ago';
+    return Math.floor(m/1440)+'d ago';
+}
+
+function statusBadge(status) {
+    const map = {
+        open:        ['#065F46','#ECFDF5','Open'],
+        in_progress: ['#1E40AF','#EFF6FF','In Progress'],
+        completed:   ['#6B21A8','#F5F3FF','Completed'],
+        pending:     ['#92400E','#FFFBEB','Pending'],
+        accepted:    ['#065F46','#ECFDF5','Accepted'],
+        rejected:    ['#B91C1C','#FEF2F2','Rejected'],
+        active:      ['#1E40AF','#EFF6FF','Active'],
+        paid:        ['#065F46','#ECFDF5','Paid'],
+    };
+    const [c,bg,label] = map[status]||['#475569','#F1F5F9',status];
+    return `<span style="background:${bg};color:${c};padding:.2rem .75rem;border-radius:999px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">${label}</span>`;
 }
