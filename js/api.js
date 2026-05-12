@@ -82,7 +82,12 @@ async function getClientProjects(clientId) {
     return res.json();
 }
 
-async function createProject(title, description, budget, deadline) {
+async function fetchClientProjects(clientId) {
+    return getClientProjects(clientId);
+}
+
+async function createProject(...args) {
+    const [title, description, budget, deadline] = args.length === 5 ? args.slice(1) : args;
     const res = await fetch(`${API_BASE}/projects`, {
         method: 'POST', headers: headers(true),
         body: JSON.stringify({ clientId: parseInt(getUserId()), title, description, budget: parseFloat(budget), deadline })
@@ -305,6 +310,38 @@ function formatDate(d) {
 
 function formatCurrency(n) {
     return '$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function projectTitle(item) {
+    return item?.projectTitle || item?.project?.title || item?.title || 'Project';
+}
+
+function projectBudget(item) {
+    return item?.project?.budget ?? item?.budget ?? '—';
+}
+
+function projectDeadline(item) {
+    return item?.project?.deadline ?? item?.deadline;
+}
+
+function clientName(item) {
+    return item?.clientName || item?.project?.client?.name || item?.client?.name || 'Client';
+}
+
+function clientId(item) {
+    return item?.clientId || item?.project?.client?.userId || item?.client?.userId;
+}
+
+function freelancerName(item) {
+    return item?.freelancerName || item?.freelancer?.name || 'Freelancer';
+}
+
+function freelancerId(item) {
+    return item?.freelancerId || item?.freelancer?.userId;
+}
+
+function bidProjectId(item) {
+    return item?.projectId || item?.project?.projectId;
 }
 
 function timeAgo(d) {

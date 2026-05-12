@@ -120,7 +120,7 @@ async function loadStats() {
   if (!bl.length) { bp.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><p>No bids yet. Browse projects and place your first bid!</p></div>`; return; }
   bp.innerHTML = bl.slice(0,4).map(b=>`
     <div class="card-row">
-      <div><div class="row-title">${b.project?.title||'Project'}</div>
+      <div><div class="row-title">${projectTitle(b)}</div>
       <div class="row-meta">💰 $${b.bidAmount} &nbsp;|&nbsp; ${(b.proposal||'').substring(0,60)}...</div></div>
       <div>${statusBadge(b.status)}</div>
     </div>`).join('') + (bl.length>4?`<a href="my-bids.html" style="display:block;text-align:center;color:#4F46E5;font-weight:600;margin-top:.75rem;font-size:.88rem">View all bids →</a>`:'');

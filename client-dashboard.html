@@ -122,7 +122,7 @@ async function load() {
   let allBids = [];
   for (const [pid, bids] of Object.entries(bidsPerProject)) {
     const proj = myProjects.find(p=>p.projectId==pid);
-    allBids.push(...bids.map(b=>({...b,projTitle:proj?.title||''})));
+    allBids.push(...bids.map(b=>({...b,projTitle:b.projectTitle || b.project?.title || proj?.title || ''})));
   }
   if (!allBids.length) { bl.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><p>No bids yet.</p></div>`; return; }
   bl.innerHTML = allBids.slice(0,5).map(b=>`

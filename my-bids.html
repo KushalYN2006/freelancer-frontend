@@ -91,7 +91,7 @@ function render(bids) {
     <div class="bid-card">
       <div class="bid-card-header">
         <div>
-          <div class="bid-proj-title">${b.project?.title||'Project'}</div>
+          <div class="bid-proj-title">${projectTitle(b)}</div>
           <div class="bid-proj-meta">
             💰 Budget: $${b.project?.budget||'—'} &nbsp;|&nbsp;
             📅 Deadline: ${formatDate(b.project?.deadline)} &nbsp;|&nbsp;
