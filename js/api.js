@@ -102,7 +102,9 @@ async function placeBid(projectId, bidAmount, proposal) {
         method: 'POST', headers: headers(true),
         body: JSON.stringify({ projectId: parseInt(projectId), freelancerId: parseInt(getUserId()), bidAmount: parseFloat(bidAmount), proposal })
     });
-    return res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && !data.error) data.error = `Failed to place bid (${res.status})`;
+    return data;
 }
 
 async function getProjectBids(projectId) {
@@ -120,7 +122,25 @@ async function updateBidStatus(bidId, status) {
         method: 'PUT', headers: headers(true),
         body: JSON.stringify({ status })
     });
-    return res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && !data.error) data.error = `Failed to update bid (${res.status})`;
+    return data;
+}
+
+async function createContract(projectId, freelancerId, startDate, endDate) {
+    const res = await fetch(`${API_BASE}/contracts`, {
+        method: 'POST',
+        headers: headers(true),
+        body: JSON.stringify({
+            projectId: parseInt(projectId),
+            freelancerId: parseInt(freelancerId),
+            startDate,
+            endDate
+        })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && !data.error) data.error = `Failed to create contract (${res.status})`;
+    return data;
 }
 
 // ── REVIEWS ──────────────────────────────────────────────────
@@ -186,6 +206,14 @@ async function getFreelancerContracts(freelancerId) {
 
 async function getClientContracts(clientId) {
     const res = await fetch(`${API_BASE}/contracts/client/${clientId}`, { headers: headers(true) });
+    return res.json();
+}
+
+async function completeContract(contractId) {
+    const res = await fetch(`${API_BASE}/contracts/${contractId}/complete`, {
+        method: 'PUT',
+        headers: headers(true)
+    });
     return res.json();
 }
 

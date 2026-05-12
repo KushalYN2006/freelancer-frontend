@@ -172,7 +172,8 @@ async function acceptBid(bidId, projectId, freelancerId) {
   const r = await updateBidStatus(bidId,'accepted');
   if (r.error) { showToast(r.error,'error'); return; }
   const today=new Date().toISOString().split('T')[0], end=new Date(Date.now()+30*24*60*60*1000).toISOString().split('T')[0];
-  await createContract(projectId, freelancerId, today, end);
+  const contract = await createContract(projectId, freelancerId, today, end);
+  if (contract.error) { showToast(contract.error,'error'); return; }
   showToast('Bid accepted & contract created!','success'); load();
 }
 async function rejectBid(bidId) { const r=await updateBidStatus(bidId,'rejected'); if(r.error){showToast(r.error,'error');return;} showToast('Bid rejected','info'); load(); }
@@ -195,7 +196,7 @@ async function submitReview() {
   const comment=document.getElementById('rev-comment').value.trim();
   const err=document.getElementById('rev-err'); err.style.display='none';
   if(!currentRating){err.textContent='Please select a star rating.';err.style.display='block';return;}
-  const r=await postReview(currentReviewData.projectId,getUserId(),currentReviewData.revieweeId,currentRating,comment);
+  const r=await postReview(currentReviewData.projectId,currentReviewData.revieweeId,currentRating,comment);
   if(r.error){err.textContent=r.error;err.style.display='block';return;}
   showToast('Review submitted!','success');
   document.getElementById('review-modal').classList.remove('open');
@@ -206,7 +207,7 @@ async function submitProject() {
   const budget=document.getElementById('pb').value, deadline=document.getElementById('pdl').value;
   const err=document.getElementById('merr'); err.style.display='none';
   if(!title||!desc||!budget||!deadline){err.textContent='All fields required.';err.style.display='block';return;}
-  const r=await createProject(getUserId(),title,desc,parseFloat(budget),deadline);
+  const r=await createProject(title,desc,parseFloat(budget),deadline);
   if(r.error){err.textContent=r.error;err.style.display='block';return;}
   showToast('Project posted!','success');
   document.getElementById('pm').classList.remove('open');
