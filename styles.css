@@ -148,3 +148,134 @@ body {
     .projects-grid { grid-template-columns: 1fr; }
     .navbar { padding: 1rem; }
 }
+
+/* Classic black and white theme override */
+:root {
+    --primary: #000000;
+    --secondary: #111111;
+    --bg: #F7F7F7;
+    --card-bg: #FFFFFF;
+    --text: #0A0A0A;
+    --muted: #555555;
+    --border: #D9D9D9;
+    --shadow: 0 4px 18px rgba(0,0,0,0.08);
+}
+
+body,
+.main,
+.chat-panel {
+    background: #F7F7F7 !important;
+    color: #0A0A0A !important;
+}
+
+.sidebar,
+.sidebar-nav,
+aside.sidebar {
+    background: #000000 !important;
+}
+
+.sidebar-logo,
+.sidebar-logo span,
+.user-name {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    background: none !important;
+}
+
+.nav-item {
+    color: rgba(255,255,255,.72) !important;
+}
+
+.nav-item:hover,
+.nav-item.active,
+.conversation-item:hover,
+.conversation-item.active {
+    background: #222222 !important;
+    color: #FFFFFF !important;
+}
+
+.btn-primary,
+.new-chat-btn,
+.send-btn,
+button.btn-primary,
+a.btn-primary {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+    border: 1px solid #000000 !important;
+    background-image: none !important;
+}
+
+.btn-primary:hover,
+.new-chat-btn:hover,
+.send-btn:hover {
+    background: #222222 !important;
+    color: #FFFFFF !important;
+    opacity: 1 !important;
+}
+
+.btn-outline,
+.btn-ghost {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    border: 1px solid #A3A3A3 !important;
+}
+
+.btn-outline:hover,
+.btn-ghost:hover {
+    background: #EEEEEE !important;
+    color: #000000 !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+.inbox-search:focus,
+.search-row input:focus,
+.fg input:focus,
+.fg textarea:focus,
+.chat-input:focus,
+.modal input:focus {
+    border-color: #000000 !important;
+    outline-color: #000000 !important;
+}
+
+.logo,
+.hero h1 span,
+.auth-link a,
+.bid-amount,
+.project-badge,
+.notification-icon {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    background: none !important;
+}
+
+.hero,
+.auth-page,
+.avatar,
+.conv-avatar,
+.chat-header-avatar,
+.msg.sent .msg-bubble,
+.modal .btn-primary {
+    background: #FFFFFF !important;
+    background-image: none !important;
+}
+
+.avatar,
+.conv-avatar,
+.chat-header-avatar {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+}
+
+.msg.sent .msg-bubble {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+}
+
+.project-badge,
+.notification-card.unread,
+.notification-icon {
+    background: #F1F1F1 !important;
+    border-color: #000000 !important;
+}
