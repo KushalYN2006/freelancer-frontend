@@ -76,6 +76,11 @@
   .modal h3{font-size:1.1rem;font-weight:800;margin-bottom:1.25rem;color:#0F172A;}
   .modal input{width:100%;padding:.65rem .9rem;border:2px solid #E2E8F0;border-radius:8px;font-size:.9rem;outline:none;margin-bottom:1rem;}
   .modal input:focus{border-color:#4F46E5;}
+  .user-results{display:grid;gap:.5rem;margin-bottom:1rem;max-height:240px;overflow-y:auto;}
+  .user-result{display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:.7rem;border:1px solid #E2E8F0;border-radius:8px;background:#fff;cursor:pointer;}
+  .user-result:hover,.user-result.selected{border-color:#000;background:#F7F7F7;}
+  .user-result-name{font-weight:700;color:#0F172A;font-size:.9rem;}
+  .user-result-meta{font-size:.76rem;color:#64748B;}
   .modal-actions{display:flex;gap:.75rem;}
   .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1.25rem;border-radius:8px;font-size:.85rem;font-weight:600;border:none;cursor:pointer;transition:all .2s;}
   .btn-primary{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;}
@@ -150,12 +155,12 @@
 <!-- NEW CHAT MODAL -->
 <div class="modal-overlay" id="new-chat-modal">
   <div class="modal">
-    <h3>New Message</h3>
-    <input type="number" id="new-chat-userid" placeholder="Enter User ID to message">
-    <input type="text" id="new-chat-name"   placeholder="Their name (for display)">
+    <h3>Start Conversation</h3>
+    <input type="text" id="new-chat-search" placeholder="Search users by name..." oninput="searchUsersForInvite()">
+    <div class="user-results" id="user-results"></div>
     <div id="new-chat-error" style="color:#B91C1C;font-size:.82rem;margin-bottom:.75rem;"></div>
     <div class="modal-actions">
-      <button class="btn btn-primary" onclick="startNewChat()">Start Chat</button>
+      <button class="btn btn-primary" onclick="sendInvite()">Send Invitation</button>
       <button class="btn btn-ghost"   onclick="closeNewChatModal()">Cancel</button>
     </div>
   </div>
@@ -178,6 +183,8 @@
   let conversations = [];   // [{userId, name, color}]
   let activeUserId  = null;
   let pollInterval  = null;
+  let selectedInviteUser = null;
+  let inviteSearchTimer = null;
 
   // Avatar colors
   const colors = ['#4F46E5','#7C3AED','#0891B2','#0D9488','#D97706','#DC2626','#7C3AED','#059669'];
@@ -333,38 +340,81 @@
 
   // ── New chat modal ────────────────────────────────────────
   function openNewChatModal() {
-    document.getElementById('new-chat-userid').value = '';
-    document.getElementById('new-chat-name').value   = '';
+    document.getElementById('new-chat-search').value = '';
+    document.getElementById('user-results').innerHTML = '';
     document.getElementById('new-chat-error').textContent = '';
+    selectedInviteUser = null;
     document.getElementById('new-chat-modal').classList.add('open');
+    setTimeout(() => document.getElementById('new-chat-search').focus(), 50);
   }
   function closeNewChatModal() {
     document.getElementById('new-chat-modal').classList.remove('open');
   }
 
-  function startNewChat() {
-    const userId = document.getElementById('new-chat-userid').value.trim();
-    const name   = document.getElementById('new-chat-name').value.trim() || `User ${userId}`;
-    const errEl  = document.getElementById('new-chat-error');
+  function searchUsersForInvite() {
+    clearTimeout(inviteSearchTimer);
+    const q = document.getElementById('new-chat-search').value.trim();
+    const results = document.getElementById('user-results');
+    selectedInviteUser = null;
 
-    if (!userId || isNaN(userId)) {
-      errEl.textContent = 'Please enter a valid User ID.';
-      return;
-    }
-    if (parseInt(userId) === myId) {
-      errEl.textContent = 'You cannot message yourself.';
+    if (q.length < 2) {
+      results.innerHTML = '<div class="no-inbox" style="padding:1rem">Type at least 2 letters.</div>';
       return;
     }
 
-    // Add to conversations if not already there
-    const exists = conversations.find(c => c.userId === parseInt(userId));
-    if (!exists) {
-      conversations.unshift({ userId: parseInt(userId), name, color: colorFor(userId) });
-      renderInbox(conversations);
+    inviteSearchTimer = setTimeout(async () => {
+      results.innerHTML = '<div class="no-inbox" style="padding:1rem">Searching...</div>';
+      const users = await searchUsersByName(q).catch(() => []);
+      if (!Array.isArray(users) || !users.length) {
+        results.innerHTML = '<div class="no-inbox" style="padding:1rem">No users found.</div>';
+        return;
+      }
+      results.innerHTML = users.map(u => `
+        <div class="user-result" onclick='selectInviteUser(${JSON.stringify(u).replace(/'/g, "&apos;")})'>
+          <div>
+            <div class="user-result-name">${escapeHtml(u.name)}</div>
+            <div class="user-result-meta">${escapeHtml(u.role)} | ${escapeHtml(u.email)}</div>
+          </div>
+          <span>Choose</span>
+        </div>`).join('');
+    }, 250);
+  }
+
+  function selectInviteUser(user) {
+    selectedInviteUser = user;
+    document.getElementById('new-chat-search').value = user.name;
+    document.getElementById('user-results').innerHTML = `
+      <div class="user-result selected">
+        <div>
+          <div class="user-result-name">${escapeHtml(user.name)}</div>
+          <div class="user-result-meta">${escapeHtml(user.role)} | ${escapeHtml(user.email)}</div>
+        </div>
+        <span>Selected</span>
+      </div>`;
+    document.getElementById('new-chat-error').textContent = '';
+  }
+
+  async function sendInvite() {
+    const errEl = document.getElementById('new-chat-error');
+    errEl.textContent = '';
+    if (!selectedInviteUser) {
+      errEl.textContent = 'Search and choose a user first.';
+      return;
+    }
+
+    const result = await sendConversationInvitation(selectedInviteUser.userId).catch(() => ({ error: 'Failed to send invitation.' }));
+    if (result.error) {
+      errEl.textContent = result.error;
+      return;
     }
 
     closeNewChatModal();
-    openChat(parseInt(userId), name, colorFor(userId));
+    if (result.status === 'accepted') {
+      openChat(selectedInviteUser.userId, selectedInviteUser.name, colorFor(selectedInviteUser.userId));
+      showToast('Conversation already available.', 'info');
+    } else {
+      showToast('Conversation invitation sent.', 'success');
+    }
   }
 
   // ── Utility ───────────────────────────────────────────────

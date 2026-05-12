@@ -89,6 +89,11 @@ function notificationIcon(type) {
     bid_rejected: '!',
     contract_created: '#',
     contract_completed: '✓',
+    
+    conversation_invite: '?',
+    conversation_invite_accepted: 'Y',
+    conversation_invite_rejected: 'N',
+    message_received: 'M',
     review_received: '*'
   };
   return icons[type] || '!';
@@ -111,6 +116,43 @@ async function markOneRead(notificationId) {
   await markNotificationRead(notificationId).catch(() => null);
   loadNotifications();
   refreshNotificationBell();
+}
+
+
+function invitationIdFromNotification(notification) {
+  try {
+    return Number(new URL(notification.link || '', window.location.href).searchParams.get('invitationId'));
+  } catch {
+    return 0;
+  }
+}
+
+async function respondToInvite(notification, accepted) {
+  const invitationId = invitationIdFromNotification(notification);
+  if (!invitationId) {
+    showToast('Invitation details are missing.', 'error');
+    return;
+  }
+
+  const result = accepted
+    ? await acceptConversationInvitation(invitationId).catch(() => ({ error: 'Could not accept invitation.' }))
+    : await rejectConversationInvitation(invitationId).catch(() => ({ error: 'Could not reject invitation.' }));
+
+  if (result.error) {
+    showToast(result.error, 'error');
+    return;
+  }
+
+  await markNotificationRead(notification.notificationId).catch(() => null);
+  refreshNotificationBell();
+
+  if (accepted && result.sender?.userId) {
+    window.location.href = `messages.html?to=${result.sender.userId}&name=${encodeURIComponent(result.sender.name || 'User')}`;
+    return;
+  }
+
+  showToast(accepted ? 'Conversation invitation accepted.' : 'Conversation invitation rejected.', accepted ? 'success' : 'info');
+  loadNotifications();
 }
 
 async function readAll() {
@@ -142,8 +184,12 @@ async function loadNotifications() {
         </div>
       </div>
       <div class="card-actions">
+        ${n.type === 'conversation_invite' && !n.readFlag ? `
+          <button class="btn btn-primary btn-sm" onclick='respondToInvite(${JSON.stringify(n).replace(/'/g, "&apos;")}, true)'>Accept</button>
+          <button class="btn btn-ghost btn-sm" onclick='respondToInvite(${JSON.stringify(n).replace(/'/g, "&apos;")}, false)'>Reject</button>
+        ` : ''}
         ${!n.readFlag ? `<button class="btn btn-ghost btn-sm" onclick="markOneRead(${n.notificationId})">Mark read</button>` : ''}
-        ${n.link ? `<button class="btn btn-primary btn-sm" onclick='openNotification(${JSON.stringify(n).replace(/'/g, "&apos;")})'>Open</button>` : ''}
+        ${n.link && n.type !== 'conversation_invite' ? `<button class="btn btn-primary btn-sm" onclick='openNotification(${JSON.stringify(n).replace(/'/g, "&apos;")})'>Open</button>` : ''}
       </div>
     </article>
   `).join('');
@@ -153,3 +199,4 @@ loadNotifications();
 </script>
 </body>
 </html>
+

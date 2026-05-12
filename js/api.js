@@ -82,6 +82,12 @@ async function getClientProjects(clientId) {
     return res.json();
 }
 
+async function searchUsersByName(name) {
+    const url = `${API_BASE}/users/search?name=${encodeURIComponent(name)}&excludeUserId=${encodeURIComponent(getUserId())}`;
+    const res = await fetch(url, { headers: headers(true) });
+    return res.json();
+}
+
 async function fetchClientProjects(clientId) {
     return getClientProjects(clientId);
 }
@@ -202,6 +208,31 @@ async function sendMessage(receiverId, message) {
     const res = await fetch(`${API_BASE}/messages`, {
         method: 'POST', headers: headers(true),
         body: JSON.stringify({ senderId: parseInt(getUserId()), receiverId: parseInt(receiverId), message })
+    });
+    return res.json();
+}
+
+async function sendConversationInvitation(receiverId) {
+    const res = await fetch(`${API_BASE}/conversation-invitations`, {
+        method: 'POST',
+        headers: headers(true),
+        body: JSON.stringify({ senderId: parseInt(getUserId()), receiverId: parseInt(receiverId) })
+    });
+    return res.json();
+}
+
+async function acceptConversationInvitation(invitationId) {
+    const res = await fetch(`${API_BASE}/conversation-invitations/${invitationId}/accept`, {
+        method: 'PUT',
+        headers: headers(true)
+    });
+    return res.json();
+}
+
+async function rejectConversationInvitation(invitationId) {
+    const res = await fetch(`${API_BASE}/conversation-invitations/${invitationId}/reject`, {
+        method: 'PUT',
+        headers: headers(true)
     });
     return res.json();
 }
