@@ -133,12 +133,16 @@ async function load() {
       </div>
       <div class="row-actions">
         ${statusBadge(b.status)}
-        ${b.status==='pending'?`<button class="btn btn-success btn-sm" onclick="acceptBid(${b.bidId},${b.project?.projectId},${b.freelancer?.userId})">Accept</button><button class="btn btn-danger btn-sm" onclick="rejectBid(${b.bidId})">Reject</button>`:''}
+        ${b.status==='pending'?`<button class="btn btn-success btn-sm" onclick="acceptBid(${b.bidId},${bidProjectId(b)},${freelancerId(b)})">Accept</button><button class="btn btn-danger btn-sm" onclick="rejectBid(${b.bidId})">Reject</button>`:''}
       </div>
     </div>`).join('');
 }
 
 async function acceptBid(bidId, projectId, freelancerId) {
+  if (!projectId || !freelancerId) {
+    showToast('Missing project or freelancer details for this bid. Please refresh and try again.','error');
+    return;
+  }
   const r = await updateBidStatus(bidId,'accepted');
   if (r.error) { showToast(r.error,'error'); return; }
   const today = new Date().toISOString().split('T')[0];
