@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Notifications - FreelancerHub</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;color:#0F172A;}
+.sidebar{width:230px;background:#1E1B4B;min-height:100vh;padding:1.5rem 1rem;display:flex;flex-direction:column;gap:.2rem;flex-shrink:0;position:sticky;top:0;height:100vh;}
+.sidebar-logo{font-weight:800;font-size:1.15rem;color:#fff;padding:.75rem 1rem;margin-bottom:1rem;}
+.nav-item{display:flex;align-items:center;gap:.75rem;padding:.65rem 1rem;border-radius:8px;color:rgba(255,255,255,.65);font-size:.875rem;font-weight:600;text-decoration:none;transition:all .2s;}
+.nav-item:hover,.nav-item.active{background:rgba(255,255,255,.12);color:#fff;}
+.nav-divider{height:1px;background:rgba(255,255,255,.1);margin:.75rem 0;}
+.nav-logout{margin-top:auto;color:#F87171!important;}
+.main{flex:1;padding:2rem;overflow-y:auto;}
+.page-header{display:flex;justify-content:space-between;gap:1rem;align-items:flex-end;margin-bottom:1.5rem;}
+.page-header h1{font-size:1.6rem;font-weight:800;margin:0 0 .25rem;}
+.page-header p{margin:0;color:#64748B;}
+.actions{display:flex;gap:.5rem;flex-wrap:wrap;}
+.notification-list{display:grid;gap:.75rem;}
+.notification-card{background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:1rem 1.1rem;display:flex;gap:1rem;align-items:flex-start;}
+.notification-card.unread{border-left:4px solid #4F46E5;background:#FBFDFF;}
+.notification-icon{width:42px;height:42px;border-radius:50%;background:#EEF2FF;color:#3730A3;display:flex;align-items:center;justify-content:center;font-weight:900;flex:0 0 auto;}
+.notification-body{flex:1;min-width:0;}
+.notification-title{font-weight:800;margin-bottom:.2rem;}
+.notification-message{color:#475569;font-size:.9rem;line-height:1.55;}
+.notification-meta{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.7rem;color:#94A3B8;font-size:.78rem;}
+.type-pill{background:#F1F5F9;color:#475569;border-radius:999px;padding:.18rem .55rem;font-weight:700;}
+.card-actions{display:flex;gap:.4rem;flex-wrap:wrap;}
+.empty{background:#fff;border:1px dashed #CBD5E1;border-radius:8px;text-align:center;padding:3rem;color:#64748B;}
+.empty strong{display:block;color:#334155;margin-bottom:.35rem;}
+@media(max-width:760px){body{display:block}.sidebar{position:relative;width:100%;height:auto;min-height:auto}.main{padding:1rem}.page-header{align-items:flex-start;flex-direction:column}.notification-card{flex-direction:column}}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">FreelancerHub</div>
+  <div id="nav-links"></div>
+  <div class="nav-divider"></div>
+  <a class="nav-item nav-logout" href="#" onclick="logoutUser()">Logout</a>
+</aside>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1>Notifications</h1>
+      <p>Track bids, reviews, contracts, and project updates.</p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline btn-sm" onclick="loadNotifications()">Refresh</button>
+      <button class="btn btn-primary btn-sm" onclick="readAll()">Mark all read</button>
+    </div>
+  </div>
+  <div id="notifications-list" class="notification-list">
+    <div class="empty"><strong>Loading notifications...</strong><span>Fetching updates from the backend.</span></div>
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+if (!getToken()) window.location.href = 'login.html';
+
+const role = getRole();
+document.getElementById('nav-links').innerHTML = role === 'client' ? `
+  <a class="nav-item" href="client-dashboard.html">Dashboard</a>
+  <a class="nav-item" href="my-projects.html">My Projects</a>
+  <a class="nav-item" href="messages.html">Messages</a>
+  <a class="nav-item" href="contracts.html">Contracts</a>
+  <a class="nav-item" href="reviews.html">Reviews</a>
+  <a class="nav-item active" href="notifications.html">Notifications</a>` : `
+  <a class="nav-item" href="freelancer-dashboard.html">Dashboard</a>
+  <a class="nav-item" href="my-bids.html">My Bids</a>
+  <a class="nav-item" href="contracts.html">Contracts</a>
+  <a class="nav-item" href="messages.html">Messages</a>
+  <a class="nav-item" href="reviews.html">Reviews</a>
+  <a class="nav-item active" href="notifications.html">Notifications</a>`;
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
+function notificationIcon(type) {
+  const icons = {
+    bid_placed: '$',
+    bid_accepted: '✓',
+    bid_rejected: '!',
+    contract_created: '#',
+    contract_completed: '✓',
+    review_received: '*'
+  };
+  return icons[type] || '!';
+}
+
+function typeLabel(type) {
+  return String(type || 'update').replace(/_/g, ' ');
+}
+
+async function openNotification(notification) {
+  if (!notification.readFlag) {
+    await markNotificationRead(notification.notificationId).catch(() => null);
+    refreshNotificationBell();
+  }
+  if (notification.link) window.location.href = notification.link;
+  else loadNotifications();
+}
+
+async function markOneRead(notificationId) {
+  await markNotificationRead(notificationId).catch(() => null);
+  loadNotifications();
+  refreshNotificationBell();
+}
+
+async function readAll() {
+  await markAllNotificationsRead().catch(() => null);
+  loadNotifications();
+  refreshNotificationBell();
+}
+
+async function loadNotifications() {
+  const el = document.getElementById('notifications-list');
+  el.innerHTML = `<div class="empty"><strong>Loading notifications...</strong><span>Fetching updates from the backend.</span></div>`;
+  const notifications = await getNotifications().catch(() => []);
+
+  if (!Array.isArray(notifications) || !notifications.length) {
+    el.innerHTML = `<div class="empty"><strong>No notifications yet</strong><span>New bids, reviews, accepted bids, and contracts will appear here.</span></div>`;
+    return;
+  }
+
+  el.innerHTML = notifications.map(n => `
+    <article class="notification-card ${n.readFlag ? '' : 'unread'}">
+      <div class="notification-icon">${escapeHtml(notificationIcon(n.type))}</div>
+      <div class="notification-body">
+        <div class="notification-title">${escapeHtml(n.title)}</div>
+        <div class="notification-message">${escapeHtml(n.message)}</div>
+        <div class="notification-meta">
+          <span class="type-pill">${escapeHtml(typeLabel(n.type))}</span>
+          <span>${formatDate(n.createdAt)}</span>
+          ${n.actor?.name ? `<span>From ${escapeHtml(n.actor.name)}</span>` : ''}
+        </div>
+      </div>
+      <div class="card-actions">
+        ${!n.readFlag ? `<button class="btn btn-ghost btn-sm" onclick="markOneRead(${n.notificationId})">Mark read</button>` : ''}
+        ${n.link ? `<button class="btn btn-primary btn-sm" onclick='openNotification(${JSON.stringify(n).replace(/'/g, "&apos;")})'>Open</button>` : ''}
+      </div>
+    </article>
+  `).join('');
+}
+
+loadNotifications();
+</script>
+</body>
+</html>

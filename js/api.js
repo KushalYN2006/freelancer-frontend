@@ -217,6 +217,64 @@ async function completeContract(contractId) {
     return res.json();
 }
 
+async function getNotifications(userId = getUserId()) {
+    const res = await fetch(`${API_BASE}/notifications/user/${userId}`, { headers: headers(true) });
+    return res.json();
+}
+
+async function getUnreadNotificationCount(userId = getUserId()) {
+    const res = await fetch(`${API_BASE}/notifications/user/${userId}/unread-count`, { headers: headers(true) });
+    return res.json();
+}
+
+async function markNotificationRead(notificationId) {
+    const res = await fetch(`${API_BASE}/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: headers(true)
+    });
+    return res.json();
+}
+
+async function markAllNotificationsRead(userId = getUserId()) {
+    const res = await fetch(`${API_BASE}/notifications/user/${userId}/read-all`, {
+        method: 'PUT',
+        headers: headers(true)
+    });
+    return res.json();
+}
+
+function installNotificationBell() {
+    if (!isLoggedIn() || document.getElementById('notification-bell')) return;
+
+    const bell = document.createElement('a');
+    bell.id = 'notification-bell';
+    bell.href = 'notifications.html';
+    bell.title = 'Notifications';
+    bell.style.cssText = 'position:fixed;top:1rem;right:1rem;z-index:9998;width:42px;height:42px;border-radius:50%;background:#fff;border:1px solid #E2E8F0;box-shadow:0 8px 24px rgba(15,23,42,.14);display:flex;align-items:center;justify-content:center;text-decoration:none;color:#0F172A;font-size:1.1rem;';
+    bell.innerHTML = '<span>🔔</span><span id="notification-count" style="display:none;position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#EF4444;color:#fff;font-size:.7rem;font-weight:800;line-height:20px;text-align:center;"></span>';
+    document.body.appendChild(bell);
+
+    refreshNotificationBell();
+    setInterval(refreshNotificationBell, 30000);
+}
+
+async function refreshNotificationBell() {
+    if (!isLoggedIn()) return;
+    const badge = document.getElementById('notification-count');
+    if (!badge) return;
+
+    const data = await getUnreadNotificationCount().catch(() => ({ count: 0 }));
+    const count = Number(data.count || 0);
+    badge.textContent = count > 99 ? '99+' : String(count);
+    badge.style.display = count > 0 ? 'block' : 'none';
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', installNotificationBell);
+} else {
+    installNotificationBell();
+}
+
 // ── UI HELPERS ────────────────────────────────────────────────
 
 function showToast(message, type = 'success') {
