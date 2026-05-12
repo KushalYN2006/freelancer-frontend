@@ -382,10 +382,17 @@
 
   // Check URL for pre-selected user
   const params = new URLSearchParams(window.location.search);
-  if (params.get('user')) {
-    const uid  = parseInt(params.get('user'));
+  const selectedUser = params.get('user') || params.get('to');
+  if (selectedUser) {
+    const uid  = parseInt(selectedUser);
     const name = params.get('name') || `User ${uid}`;
-    setTimeout(() => openChat(uid, name, colorFor(uid)), 500);
+    setTimeout(() => {
+      if (!conversations.find(c => c.userId === uid)) {
+        conversations.unshift({ userId: uid, name, color: colorFor(uid) });
+        renderInbox(conversations);
+      }
+      openChat(uid, name, colorFor(uid));
+    }, 500);
   }
 </script>
 </body>

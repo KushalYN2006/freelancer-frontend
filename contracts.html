@@ -88,22 +88,22 @@ function render(contracts) {
   const el = document.getElementById('contracts-list');
   if(!contracts.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><p>No contracts found.</p></div>`; return; }
   el.innerHTML = contracts.map(c=>{
-    const otherParty = role==='client' ? c.freelancer : c.project?.client;
+    const otherParty = { userId: role==='client' ? freelancerId(c) : clientId(c), name: role==='client' ? freelancerName(c) : clientName(c) };
     const otherLabel = role==='client' ? 'Freelancer' : 'Client';
     return `
     <div class="contract-card">
       <div class="contract-header">
-        <div class="contract-title">📄 ${c.project?.title||'Contract'}</div>
+        <div class="contract-title">📄 ${projectTitle(c)}</div>
         ${statusBadge(c.status)}
       </div>
       <div class="contract-meta">
         <div class="meta-item"><label>${otherLabel}</label><span>👤 ${otherParty?.name||'—'}</span></div>
         <div class="meta-item"><label>Start Date</label><span>📅 ${formatDate(c.startDate)}</span></div>
         <div class="meta-item"><label>End Date</label><span>📅 ${formatDate(c.endDate)}</span></div>
-        <div class="meta-item"><label>Budget</label><span>💰 $${c.project?.budget||'—'}</span></div>
+        <div class="meta-item"><label>Budget</label><span>💰 $${projectBudget(c)}</span></div>
       </div>
       <div class="contract-actions">
-        <button class="btn btn-outline btn-sm" onclick="window.location.href='messages.html?to=${otherParty?.userId}'">💬 Message</button>
+        <button class="btn btn-outline btn-sm" onclick="window.location.href='messages.html?to=${otherParty?.userId}&name=${encodeURIComponent(otherParty?.name || '')}'">💬 Message</button>
         ${c.status==='active'&&role==='client'?`<button class="btn btn-success btn-sm" onclick="markComplete(${c.contractId})">✅ Mark Complete</button>`:''}
       </div>
     </div>`;
@@ -119,3 +119,4 @@ async function markComplete(id) {
 load();
 </script>
 </body></html>
+

@@ -93,9 +93,9 @@ function render(bids) {
         <div>
           <div class="bid-proj-title">${projectTitle(b)}</div>
           <div class="bid-proj-meta">
-            💰 Budget: $${b.project?.budget||'—'} &nbsp;|&nbsp;
-            📅 Deadline: ${formatDate(b.project?.deadline)} &nbsp;|&nbsp;
-            👤 Client: ${b.project?.client?.name||'—'}
+            💰 Budget: $${projectBudget(b)} &nbsp;|&nbsp;
+            📅 Deadline: ${formatDate(projectDeadline(b))} &nbsp;|&nbsp;
+            👤 Client: ${clientName(b)}
           </div>
         </div>
         <div style="text-align:right">
@@ -104,9 +104,10 @@ function render(bids) {
         </div>
       </div>
       <div class="bid-proposal">"${b.proposal||''}"</div>
-      ${b.status==='accepted'?`<div style="margin-top:.75rem;display:flex;gap:.5rem"><button class="btn btn-outline btn-sm" onclick="window.location.href='messages.html?to=${b.project?.client?.userId}'">💬 Message Client</button><a href="contracts.html" class="btn btn-primary btn-sm">📄 View Contract</a></div>`:''}
+      ${b.status==='accepted'?`<div style="margin-top:.75rem;display:flex;gap:.5rem"><button class="btn btn-outline btn-sm" onclick="window.location.href='messages.html?to=${clientId(b)}&name=${encodeURIComponent(clientName(b))}'">💬 Message Client</button><a href="contracts.html" class="btn btn-primary btn-sm">📄 View Contract</a></div>`:''}
     </div>`).join('');
 }
 load();
 </script>
 </body></html>
+

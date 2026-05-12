@@ -177,7 +177,7 @@ async function acceptBid(bidId, projectId, freelancerId) {
   if (r.error) { showToast(r.error,'error'); return; }
   const today=new Date().toISOString().split('T')[0], end=new Date(Date.now()+30*24*60*60*1000).toISOString().split('T')[0];
   const contract = await createContract(projectId, freelancerId, today, end);
-  if (contract.error) { showToast(contract.error,'error'); return; }
+  if (contract.error && !contract.error.toLowerCase().includes('already exists')) { showToast(contract.error,'error'); return; }
   showToast('Bid accepted & contract created!','success'); load();
 }
 async function rejectBid(bidId) { const r=await updateBidStatus(bidId,'rejected'); if(r.error){showToast(r.error,'error');return;} showToast('Bid rejected','info'); load(); }

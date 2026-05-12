@@ -184,12 +184,16 @@ async function postReview(projectId, revieweeId, rating, comment) {
 
 // ── MESSAGES ─────────────────────────────────────────────────
 
-async function getInbox(userId) {
+async function getInbox(userId = getUserId()) {
     const res = await fetch(`${API_BASE}/messages/inbox/${userId}`, { headers: headers(true) });
     return res.json();
 }
 
 async function getConversation(senderId, receiverId) {
+    if (receiverId === undefined) {
+        receiverId = senderId;
+        senderId = getUserId();
+    }
     const res = await fetch(`${API_BASE}/messages/${senderId}/${receiverId}`, { headers: headers(true) });
     return res.json();
 }
