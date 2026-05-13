@@ -146,7 +146,7 @@ async function renderProjects(projects) {
               bidList.map(b=>`
                 <div class="bid-row">
                   <div style="flex:1">
-                    <div class="bid-name">👤 ${b.freelancer?.name||'Freelancer'}</div>
+                    <div class="bid-name">👤 ${freelancerName(b)}</div>
                     <div class="bid-proposal">${(b.proposal||'').substring(0,100)}...</div>
                   </div>
                   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.4rem">
@@ -157,10 +157,10 @@ async function renderProjects(projects) {
                         <button class="btn btn-success btn-sm" onclick="acceptBid(${b.bidId},${p.projectId},${freelancerId(b)})">Accept</button>
                         <button class="btn btn-danger btn-sm" onclick="rejectBid(${b.bidId})">Reject</button>
                       </div>`:''}
-                    ${b.status==='accepted'?`<button class="btn btn-outline btn-sm" onclick="msgFreelancer(${b.freelancer?.userId})">💬 Message</button>`:''}
+                    ${b.status==='accepted'?`<button class="btn btn-outline btn-sm" onclick="msgFreelancer(${freelancerId(b)})">💬 Message</button>`:''}
                   </div>
                 </div>`).join('')}
-            ${p.status==='completed'&&acceptedBid?`<button class="btn btn-primary btn-sm" style="margin-top:.5rem" onclick="openReview(${p.projectId},${acceptedBid.freelancer?.userId},'${(acceptedBid.freelancer?.name||'').replace(/'/g,"\\'")}')">⭐ Leave Review</button>`:''}
+            ${p.status==='completed'&&acceptedBid?`<button class="btn btn-primary btn-sm" style="margin-top:.5rem" onclick="openReview(${p.projectId},${freelancerId(acceptedBid)},'${freelancerName(acceptedBid).replace(/'/g,"\\'")}')">⭐ Leave Review</button>`:''}
           </div>
         </div>
       </div>`;
@@ -221,3 +221,4 @@ async function submitProject() {
 load();
 </script>
 </body></html>
+

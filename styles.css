@@ -255,8 +255,7 @@ select:focus,
 .avatar,
 .conv-avatar,
 .chat-header-avatar,
-.msg.sent .msg-bubble,
-.modal .btn-primary {
+.msg.sent .msg-bubble {
     background: #FFFFFF !important;
     background-image: none !important;
 }
