@@ -4,7 +4,7 @@
 // Every backend call goes through this file.
 // ============================================================
 
-const API_BASE = 'https://web-production-bc088.up.railway.app/api';
+const API_BASE = 'http://localhost:9090/api';
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -90,6 +90,20 @@ async function searchUsersByName(name) {
 
 async function fetchClientProjects(clientId) {
     return getClientProjects(clientId);
+}
+
+async function getFreelancerProfile(freelancerId = getUserId()) {
+    const res = await fetch(`${API_BASE}/freelancer-profiles/${freelancerId}`, { headers: headers(true) });
+    return res.json();
+}
+
+async function saveFreelancerProfile(profile, freelancerId = getUserId()) {
+    const res = await fetch(`${API_BASE}/freelancer-profiles/${freelancerId}`, {
+        method: 'PUT',
+        headers: headers(true),
+        body: JSON.stringify(profile)
+    });
+    return res.json();
 }
 
 async function createProject(...args) {

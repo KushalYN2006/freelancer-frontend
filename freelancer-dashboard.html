@@ -13,7 +13,12 @@ body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;}
 .nav-divider{height:1px;background:rgba(255,255,255,.1);margin:.75rem 0;}
 .nav-logout{margin-top:auto;color:#F87171!important;}
 .nav-logout:hover{background:rgba(239,68,68,.15)!important;}
+.sidebar-bottom{margin-top:auto;display:flex;flex-direction:column;gap:.2rem;}
+.sidebar-bottom .nav-logout{margin-top:0;}
+.nav-profile{color:rgba(255,255,255,.82)!important;}
 .main{flex:1;padding:2rem;overflow-y:auto;}
+.profile-avatar-btn{position:fixed;top:1rem;right:4.5rem;z-index:9998;width:42px;height:42px;border-radius:50%;border:1px solid #E2E8F0;background:#fff;color:#0F172A;box-shadow:0 8px 24px rgba(15,23,42,.14);display:flex;align-items:center;justify-content:center;font-weight:800;cursor:pointer;}
+.profile-avatar-btn:hover{background:#F8FAFC;}
 .page-header h1{font-size:1.6rem;font-weight:700;color:#0F172A;margin:0 0 .3rem;}
 .page-header p{color:#64748B;margin:0 0 2rem;}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem;}
@@ -45,6 +50,9 @@ body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;}
 .fg label{display:block;font-size:.83rem;font-weight:600;margin-bottom:.3rem;}
 .fg input,.fg textarea{width:100%;padding:.65rem .9rem;border:2px solid #E2E8F0;border-radius:8px;font-size:.9rem;outline:none;font-family:inherit;box-sizing:border-box;}
 .fg input:focus,.fg textarea:focus{border-color:#4F46E5;}
+.profile-readonly{background:#F8FAFC;color:#475569;}
+.profile-meta{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;}
+.profile-meta .fg{margin-bottom:0;}
 @keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 </style>
 </head>
@@ -57,9 +65,13 @@ body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;}
   <a class="nav-item" href="messages.html">💬 Messages</a>
   <a class="nav-item" href="reviews.html">⭐ Reviews</a>
   <div class="nav-divider"></div>
-  <a class="nav-item nav-logout" href="#" onclick="logoutUser()">🚪 Logout</a>
+  <div class="sidebar-bottom">
+    <a class="nav-item nav-profile" href="#" onclick="openProfileSettings();return false;">Profile Settings</a>
+    <a class="nav-item nav-logout" href="#" onclick="logoutUser()">🚪 Logout</a>
+  </div>
 </aside>
 <main class="main">
+  <button class="profile-avatar-btn" id="profile-avatar" title="Profile settings" onclick="openProfileSettings()">U</button>
   <div class="page-header">
     <p style="text-transform:uppercase;letter-spacing:.08em;font-size:.72rem;font-weight:800;color:#475569;margin:0 0 .35rem;">Freelancer Dashboard</p>
     <h1>Welcome, <span id="uname"></span> 👋</h1>
@@ -99,11 +111,93 @@ body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;}
   </div>
 </div>
 
+<div class="modal-bg" id="profile-modal">
+  <div class="modal">
+    <h3>Profile Settings</h3>
+    <div id="profile-msg" style="display:none;padding:.7rem;border-radius:8px;margin-bottom:1rem;font-size:.88rem;"></div>
+    <div class="profile-meta">
+      <div class="fg"><label>freelancer_id</label><input id="pf-id" class="profile-readonly" readonly></div>
+      <div class="fg"><label>Name</label><input id="pf-name" class="profile-readonly" readonly></div>
+    </div>
+    <div class="fg"><label>Skills</label><textarea id="pf-skills" rows="3" placeholder="Example: Java, React, MySQL, UI design"></textarea></div>
+    <div class="fg"><label>Experience</label><textarea id="pf-experience" rows="4" placeholder="Describe your work experience"></textarea></div>
+    <div class="fg"><label>Portfolio link</label><input id="pf-portfolio" type="url" placeholder="https://your-portfolio.com"></div>
+    <div style="display:flex;gap:.75rem;margin-top:1rem;">
+      <button class="btn btn-primary" onclick="submitProfile()">Save Profile</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('profile-modal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/api.js"></script>
 <script>
 requireAuth('freelancer');
 document.getElementById('uname').textContent = getUserName() || 'Freelancer';
+document.getElementById('profile-avatar').textContent = initials(getUserName() || 'Freelancer');
 let currentProjectId = null;
+
+function initials(name) {
+  return (name || 'U').split(' ').filter(Boolean).map(w => w[0]).join('').slice(0,2).toUpperCase();
+}
+
+function showProfileMessage(message, type='success') {
+  const el = document.getElementById('profile-msg');
+  el.textContent = message;
+  el.style.display = 'block';
+  el.style.background = type === 'error' ? '#FEF2F2' : '#ECFDF5';
+  el.style.color = type === 'error' ? '#B91C1C' : '#065F46';
+}
+
+async function openProfileSettings() {
+  const modal = document.getElementById('profile-modal');
+  modal.classList.add('open');
+  document.getElementById('profile-msg').style.display = 'none';
+  document.getElementById('pf-id').value = getUserId() || '';
+  document.getElementById('pf-name').value = getUserName() || 'Freelancer';
+
+  const profile = await getFreelancerProfile().catch(() => ({ error: 'Could not load profile from backend.' }));
+  if (profile.error) {
+    if (profile.error.includes('not found')) {
+      showProfileMessage(`${profile.error}. Please logout and login/register again so your account uses the Railway MySQL user id.`, 'error');
+      return;
+    }
+    showProfileMessage(profile.error, 'error');
+    return;
+  }
+
+  document.getElementById('pf-id').value = profile.freelancer_id || profile.freelancerId || getUserId() || '';
+  document.getElementById('pf-name').value = profile.name || getUserName() || 'Freelancer';
+  document.getElementById('pf-skills').value = profile.skills || '';
+  document.getElementById('pf-experience').value = profile.experience || '';
+  document.getElementById('pf-portfolio').value = profile.portfolio_link || profile.portfolioLink || '';
+}
+
+async function submitProfile() {
+  const payload = {
+    skills: document.getElementById('pf-skills').value.trim(),
+    experience: document.getElementById('pf-experience').value.trim(),
+    portfolioLink: document.getElementById('pf-portfolio').value.trim()
+  };
+
+  if (!payload.skills || !payload.experience || !payload.portfolioLink) {
+    showProfileMessage('Please fill skills, experience, and portfolio link before saving.', 'error');
+    return;
+  }
+
+  const saved = await saveFreelancerProfile(payload).catch(() => ({ error: 'Could not save profile to backend.' }));
+  if (saved.error) {
+    if (saved.error.includes('not found')) {
+      showProfileMessage(`${saved.error}. Please logout and login/register again so your account uses the Railway MySQL user id.`, 'error');
+      return;
+    }
+    showProfileMessage(saved.error, 'error');
+    return;
+  }
+  document.getElementById('pf-skills').value = saved.skills || '';
+  document.getElementById('pf-experience').value = saved.experience || '';
+  document.getElementById('pf-portfolio').value = saved.portfolio_link || saved.portfolioLink || '';
+  showProfileMessage('Profile saved successfully.', 'success');
+}
 
 async function loadStats() {
   const uid = getUserId();
