@@ -101,13 +101,24 @@ function render(contracts) {
         <div class="meta-item"><label>Start Date</label><span>📅 ${formatDate(c.startDate)}</span></div>
         <div class="meta-item"><label>End Date</label><span>📅 ${formatDate(c.endDate)}</span></div>
         <div class="meta-item"><label>Budget</label><span>💰 $${projectBudget(c)}</span></div>
+        <div class="meta-item"><label>Payment</label><span>${statusBadge(c.paymentStatus || 'pending')}</span></div>
       </div>
       <div class="contract-actions">
         <button class="btn btn-outline btn-sm" onclick="window.location.href='messages.html?to=${otherParty?.userId}&name=${encodeURIComponent(otherParty?.name || '')}'">💬 Message</button>
-        ${c.status==='active'&&role==='client'?`<button class="btn btn-success btn-sm" onclick="markComplete(${c.contractId})">✅ Mark Complete</button>`:''}
+        ${c.status==='active'&&role==='freelancer'&&c.paymentStatus!=='paid'?`<button class="btn btn-success btn-sm" onclick="paymentComplete(${c.contractId})">✅ Payment Complete</button>`:''}
+        ${c.status==='active'&&role==='freelancer'&&c.paymentStatus==='paid'?`<span class="btn btn-outline btn-sm" style="pointer-events:none;">Payment marked complete</span>`:''}
+        ${c.status==='active'&&role==='client'&&c.paymentStatus==='paid'?`<button class="btn btn-success btn-sm" onclick="markComplete(${c.contractId})">✅ Mark Complete</button>`:''}
+        ${c.status==='active'&&role==='client'&&c.paymentStatus!=='paid'?`<span class="btn btn-outline btn-sm" style="pointer-events:none;">Waiting for payment completion</span>`:''}
       </div>
     </div>`;
   }).join('');
+}
+
+async function paymentComplete(id) {
+  if(!confirm('Mark payment as completed for this contract?')) return;
+  const r = await markPaymentComplete(id);
+  if(r.error){showToast(r.error,'error');return;}
+  showToast('Payment marked as completed!','success'); load();
 }
 
 async function markComplete(id) {

@@ -271,6 +271,15 @@ async function completeContract(contractId) {
     return res.json();
 }
 
+async function markPaymentComplete(contractId) {
+    const res = await fetch(`${API_BASE}/contracts/${contractId}/payment-complete`, {
+        method: 'PUT',
+        headers: headers(true),
+        body: JSON.stringify({ freelancerId: parseInt(getUserId()) })
+    });
+    return res.json();
+}
+
 async function getNotifications(userId = getUserId()) {
     const res = await fetch(`${API_BASE}/notifications/user/${userId}`, { headers: headers(true) });
     return res.json();
