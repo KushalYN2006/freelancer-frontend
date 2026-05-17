@@ -36,6 +36,11 @@ body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;}
 .fg label{display:block;font-size:.83rem;font-weight:600;margin-bottom:.3rem;}
 .fg input,.fg textarea{width:100%;padding:.65rem .9rem;border:2px solid #E2E8F0;border-radius:8px;font-size:.9rem;outline:none;font-family:inherit;box-sizing:border-box;}
 .fg input:focus,.fg textarea:focus{border-color:#4F46E5;}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;}
+.profile-box{border:1px solid #E2E8F0;border-radius:8px;padding:.75rem;background:#F8FAFC;}
+.profile-label{font-size:.72rem;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:.25rem;}
+.profile-value{font-size:.9rem;color:#0F172A;line-height:1.5;word-break:break-word;}
+.profile-block{margin-bottom:1rem;}
 @keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 </style>
 </head>
@@ -100,6 +105,16 @@ body{display:flex;min-height:100vh;background:#F8FAFC;margin:0;}
   </div>
 </div>
 
+<div class="modal-bg" id="profile-modal">
+  <div class="modal">
+    <h3>Freelancer Profile</h3>
+    <div id="profile-body"></div>
+    <div style="display:flex;gap:.75rem;margin-top:1rem;">
+      <button class="btn btn-ghost" onclick="document.getElementById('profile-modal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/api.js"></script>
 <script>
 requireAuth('client');
@@ -154,6 +169,7 @@ async function renderProjects(projects) {
                     ${statusBadge(b.status)}
                     ${b.status==='pending'?`
                       <div style="display:flex;gap:.35rem">
+                        <button class="btn btn-outline btn-sm" onclick="openFreelancerProfile(${freelancerId(b)},'${freelancerName(b).replace(/'/g,"\\'")}')">View Profile</button>
                         <button class="btn btn-success btn-sm" onclick="acceptBid(${b.bidId},${p.projectId},${freelancerId(b)})">Accept</button>
                         <button class="btn btn-danger btn-sm" onclick="rejectBid(${b.bidId})">Reject</button>
                       </div>`:''}
@@ -166,6 +182,36 @@ async function renderProjects(projects) {
       </div>`;
   }
   pl.innerHTML = html;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function openFreelancerProfile(fid, fallbackName = 'Freelancer') {
+  const modal = document.getElementById('profile-modal');
+  const body = document.getElementById('profile-body');
+  modal.classList.add('open');
+  body.innerHTML = `<div class="empty"><div class="empty-icon">...</div><p>Loading profile...</p></div>`;
+  if (!fid) {
+    body.innerHTML = `<div style="background:#FEF2F2;color:#B91C1C;padding:.75rem;border-radius:8px;">Missing freelancer id for this bid.</div>`;
+    return;
+  }
+  const profile = await getFreelancerProfile(fid).catch(() => ({ error: 'Could not load freelancer profile.' }));
+  if (profile.error) {
+    body.innerHTML = `<div style="background:#FEF2F2;color:#B91C1C;padding:.75rem;border-radius:8px;">${escapeHtml(profile.error)}</div>`;
+    return;
+  }
+  const portfolio = profile.portfolio_link || profile.portfolioLink || '';
+  body.innerHTML = `
+    <div class="profile-grid">
+      <div class="profile-box"><div class="profile-label">Freelancer ID</div><div class="profile-value">${escapeHtml(profile.freelancer_id || profile.freelancerId || fid)}</div></div>
+      <div class="profile-box"><div class="profile-label">Name</div><div class="profile-value">${escapeHtml(profile.name || fallbackName)}</div></div>
+    </div>
+    <div class="profile-block"><div class="profile-label">Skills</div><div class="profile-value">${escapeHtml(profile.skills || 'No skills saved yet.')}</div></div>
+    <div class="profile-block"><div class="profile-label">Experience</div><div class="profile-value">${escapeHtml(profile.experience || 'No experience saved yet.')}</div></div>
+    <div class="profile-block"><div class="profile-label">Portfolio link</div><div class="profile-value">${portfolio ? `<a href="${escapeHtml(portfolio)}" target="_blank" rel="noopener">${escapeHtml(portfolio)}</a>` : 'No portfolio link saved yet.'}</div></div>
+  `;
 }
 
 async function acceptBid(bidId, projectId, freelancerId) {
