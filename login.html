@@ -38,6 +38,11 @@
                 errorDiv.style.display = 'block';
                 return;
             }
+            if (!isValidEmail(email)) {
+                errorDiv.textContent = 'Please enter a valid email address.';
+                errorDiv.style.display = 'block';
+                return;
+            }
 
             btn.textContent = 'Signing in...';
             btn.disabled = true;
@@ -63,6 +68,10 @@
                 btn.disabled = false;
             }
         });
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
     </script>
 </body>
 </html>

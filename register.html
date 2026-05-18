@@ -54,6 +54,11 @@
                 errorDiv.style.display = 'block';
                 return;
             }
+            if (!isValidEmail(email)) {
+                errorDiv.textContent = 'Please enter a valid email address.';
+                errorDiv.style.display = 'block';
+                return;
+            }
             if (password.length < 8) {
                 errorDiv.textContent = 'Password must be at least 8 characters.';
                 errorDiv.style.display = 'block';
@@ -77,6 +82,10 @@
                 errorDiv.style.display = 'block';
             }
         });
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
     </script>
 </body>
 </html>
